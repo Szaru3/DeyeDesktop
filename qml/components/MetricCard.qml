@@ -16,17 +16,7 @@ Rectangle {
     color: Theme.bgSurface
     border.color: Theme.border
     border.width: 1
-    implicitHeight: 132
-
-    // Subtle top accent bar
-    Rectangle {
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-        height: 3
-        radius: 2
-        color: root.accentColor
-    }
+    implicitHeight: 128
 
     ColumnLayout {
         anchors.fill: parent
@@ -38,17 +28,25 @@ Rectangle {
             spacing: 8
 
             Rectangle {
-                width: 10
-                height: 10
-                radius: 5
-                color: root.accentColor
+                width: 22
+                height: 22
+                radius: 11
+                color: Qt.rgba(root.accentColor.r, root.accentColor.g, root.accentColor.b, 0.18)
+
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 8
+                    height: 8
+                    radius: 4
+                    color: root.accentColor
+                }
             }
 
             Text {
                 text: root.title
                 color: Theme.textSecondary
                 font.pixelSize: 13
-                font.weight: Font.Medium
+                font.weight: Font.DemiBold
                 Layout.fillWidth: true
                 elide: Text.ElideRight
             }
@@ -57,7 +55,7 @@ Rectangle {
         Text {
             text: root.valueText
             color: Theme.textPrimary
-            font.pixelSize: 28
+            font.pixelSize: 26
             font.weight: Font.Bold
             Layout.fillWidth: true
             elide: Text.ElideRight
@@ -65,13 +63,13 @@ Rectangle {
 
         Item { Layout.fillHeight: true }
 
-        // Optional SOC progress bar
+        // Adwaita-style level bar for Battery SOC
         Rectangle {
             visible: root.showProgress
             Layout.fillWidth: true
             height: 6
             radius: 3
-            color: Theme.bgElevated
+            color: Theme.bgInput
 
             Rectangle {
                 width: parent.width * Math.max(0, Math.min(1, root.progressValue / 100.0))
@@ -80,14 +78,14 @@ Rectangle {
                 color: root.accentColor
 
                 Behavior on width {
-                    NumberAnimation { duration: 350; easing.type: Easing.OutCubic }
+                    NumberAnimation { duration: 320; easing.type: Easing.OutCubic }
                 }
             }
         }
 
         Text {
             text: root.subtitle
-            color: Theme.textSecondary
+            color: Theme.textMuted
             font.pixelSize: 12
             Layout.fillWidth: true
             elide: Text.ElideRight

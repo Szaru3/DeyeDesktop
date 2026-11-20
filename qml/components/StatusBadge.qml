@@ -12,7 +12,7 @@ Rectangle {
 
     readonly property color badgeColor: isOnline ? Theme.success
                                       : isPartial ? Theme.warning
-                                      : isOffline ? Theme.error
+                                      : isOffline ? Theme.errorText
                                       : Theme.textMuted
 
     readonly property string labelText: isOnline ? "Online"
@@ -20,11 +20,11 @@ Rectangle {
                                       : isOffline ? "Offline"
                                       : "Unknown"
 
-    implicitWidth: row.implicitWidth + 18
-    implicitHeight: 26
-    radius: 13
-    color: Qt.rgba(badgeColor.r, badgeColor.g, badgeColor.b, 0.16)
-    border.color: Qt.rgba(badgeColor.r, badgeColor.g, badgeColor.b, 0.45)
+    implicitWidth: row.implicitWidth + 16
+    implicitHeight: 24
+    radius: Theme.radiusPill
+    color: Qt.rgba(badgeColor.r, badgeColor.g, badgeColor.b, 0.15)
+    border.color: Qt.rgba(badgeColor.r, badgeColor.g, badgeColor.b, 0.30)
     border.width: 1
 
     Row {
@@ -33,9 +33,9 @@ Rectangle {
         spacing: 6
 
         Rectangle {
-            width: 8
-            height: 8
-            radius: 4
+            width: 7
+            height: 7
+            radius: 3.5
             color: root.badgeColor
             anchors.verticalCenter: parent.verticalCenter
         }

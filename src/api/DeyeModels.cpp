@@ -221,7 +221,20 @@ StationInfo StationInfo::fromJson(const QJsonObject &obj)
     if (info.name.isEmpty()) {
         info.name = QStringLiteral("Station #%1").arg(info.id);
     }
-    info.locationAddress = obj.value(QStringLiteral("locationAddress")).toString();
+    info.locationAddress = obj.value(QStringLiteral("locationAddress")).toString().trimmed();
+    if (info.locationAddress.isEmpty()) {
+        info.locationAddress = obj.value(QStringLiteral("address")).toString().trimmed();
+    }
+    if (info.locationAddress.isEmpty()) {
+        QStringList parts;
+        const QString city = obj.value(QStringLiteral("city")).toString().trimmed();
+        const QString region = obj.value(QStringLiteral("region")).toString().trimmed();
+        const QString country = obj.value(QStringLiteral("country")).toString().trimmed();
+        if (!city.isEmpty()) parts.push_back(city);
+        if (!region.isEmpty() && region != city) parts.push_back(region);
+        if (!country.isEmpty()) parts.push_back(country);
+        info.locationAddress = parts.join(QStringLiteral(", "));
+    }
     if (!readOptionalDouble(obj, QStringLiteral("installedCapacity"), info.installedCapacityKw)) {
         readOptionalDouble(obj, QStringLiteral("capacity"), info.installedCapacityKw);
     }

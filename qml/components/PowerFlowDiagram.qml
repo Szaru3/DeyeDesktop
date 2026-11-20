@@ -16,7 +16,7 @@ Rectangle {
     color: Theme.bgSurface
     border.color: Theme.border
     border.width: 1
-    implicitHeight: 310
+    implicitHeight: 300
 
     NumberAnimation on flowPhase {
         from: 0.0
@@ -44,25 +44,24 @@ Rectangle {
 
             var cx = width / 2;
             var cy = height / 2;
-            var topY = 58;
-            var bottomY = height - 58;
+            var topY = 56;
+            var bottomY = height - 56;
             var leftX = Math.max(105, width * 0.22);
             var rightX = Math.min(width - 105, width * 0.78);
 
             function drawFlowLine(x1, y1, x2, y2, active, reverse, strokeColor) {
-                // Base track
                 ctx.beginPath();
                 ctx.moveTo(x1, y1);
                 ctx.lineTo(x2, y2);
                 ctx.lineWidth = 3;
-                ctx.strokeStyle = active ? strokeColor : "#26334D";
-                ctx.globalAlpha = active ? 0.45 : 0.6;
+                ctx.lineCap = "round";
+                ctx.strokeStyle = active ? strokeColor : "#424242";
+                ctx.globalAlpha = active ? 0.35 : 0.7;
                 ctx.stroke();
                 ctx.globalAlpha = 1.0;
 
                 if (!active) return;
 
-                // Animated energy pulses along line
                 var sx = reverse ? x2 : x1;
                 var sy = reverse ? y2 : y1;
                 var ex = reverse ? x1 : x2;
@@ -75,52 +74,50 @@ Rectangle {
                     var py = sy + (ey - sy) * t;
 
                     ctx.beginPath();
-                    ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+                    ctx.arc(px, py, 4, 0, Math.PI * 2);
                     ctx.fillStyle = strokeColor;
                     ctx.fill();
                 }
             }
 
             // Solar (Top) -> Inverter (Center)
-            drawFlowLine(cx, topY + 34, cx, cy - 34,
+            drawFlowLine(cx, topY + 32, cx, cy - 32,
                          root.generationPowerW > 10, false, Theme.solar);
 
             // Inverter (Center) <-> Battery (Left)
-            // batteryPowerW > 0 => charging (Center -> Left), < 0 => discharging (Left -> Center)
-            drawFlowLine(cx - 42, cy, leftX + 54, cy,
+            drawFlowLine(cx - 44, cy, leftX + 64, cy,
                          Math.abs(root.batteryPowerW) > 10,
                          root.batteryPowerW < 0,
                          Theme.battery);
 
             // Grid (Right) <-> Inverter (Center)
-            // gridPowerW > 0 => importing (Right -> Center), < 0 => exporting (Center -> Right)
-            drawFlowLine(rightX - 54, cy, cx + 42, cy,
+            drawFlowLine(rightX - 64, cy, cx + 44, cy,
                          Math.abs(root.gridPowerW) > 10,
                          root.gridPowerW < 0,
                          Theme.grid);
 
             // Inverter (Center) -> Home Load (Bottom)
-            drawFlowLine(cx, cy + 34, cx, bottomY - 34,
+            drawFlowLine(cx, cy + 32, cx, bottomY - 32,
                          root.consumptionPowerW > 10, false, Theme.load);
         }
     }
 
     // Center Inverter Hub
     Rectangle {
-        width: 84
-        height: 68
-        radius: 14
+        width: 88
+        height: 64
+        radius: Theme.radiusLg
         anchors.centerIn: parent
         color: Theme.bgElevated
-        border.color: Theme.accent
-        border.width: 1.5
+        border.color: Theme.border
+        border.width: 1
 
         Column {
             anchors.centerIn: parent
             spacing: 2
             Text {
                 text: "DEYE"
-                color: Theme.accent
+                color: Theme.accentText
                 font.pixelSize: 13
                 font.weight: Font.Bold
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -136,29 +133,29 @@ Rectangle {
 
     // Top Node: Solar PV
     Rectangle {
-        width: 132
-        height: 64
-        radius: 12
+        width: 136
+        height: 60
+        radius: Theme.radiusLg
         x: (parent.width - width) / 2
-        y: 24
+        y: 22
         color: Theme.solarSoft
-        border.color: Theme.solar
-        border.width: 1.2
+        border.color: Qt.rgba(Theme.solar.r, Theme.solar.g, Theme.solar.b, 0.55)
+        border.width: 1
 
         Column {
             anchors.centerIn: parent
             spacing: 2
             Text {
-                text: "SOLAR PV"
+                text: "Solar PV"
                 color: Theme.solar
-                font.pixelSize: 10
-                font.weight: Font.Bold
+                font.pixelSize: 11
+                font.weight: Font.DemiBold
                 anchors.horizontalCenter: parent.horizontalCenter
             }
             Text {
                 text: appController.formatPower(root.generationPowerW)
                 color: Theme.textPrimary
-                font.pixelSize: 16
+                font.pixelSize: 15
                 font.weight: Font.Bold
                 anchors.horizontalCenter: parent.horizontalCenter
             }
@@ -167,31 +164,31 @@ Rectangle {
 
     // Left Node: Battery
     Rectangle {
-        width: 136
-        height: 76
-        radius: 12
+        width: 138
+        height: 74
+        radius: Theme.radiusLg
         x: Math.max(105, parent.width * 0.22) - width / 2
         y: (parent.height - height) / 2
         color: Theme.batterySoft
-        border.color: Theme.battery
-        border.width: 1.2
+        border.color: Qt.rgba(Theme.battery.r, Theme.battery.g, Theme.battery.b, 0.55)
+        border.width: 1
 
         Column {
             anchors.centerIn: parent
             spacing: 2
             Text {
                 text: root.hasBatterySoc
-                      ? ("BATTERY • " + Math.round(root.batterySoc) + "%")
-                      : "BATTERY"
+                      ? ("Battery • " + Math.round(root.batterySoc) + "%")
+                      : "Battery"
                 color: Theme.battery
-                font.pixelSize: 10
-                font.weight: Font.Bold
+                font.pixelSize: 11
+                font.weight: Font.DemiBold
                 anchors.horizontalCenter: parent.horizontalCenter
             }
             Text {
                 text: appController.formatPower(root.batteryPowerW)
                 color: Theme.textPrimary
-                font.pixelSize: 16
+                font.pixelSize: 15
                 font.weight: Font.Bold
                 anchors.horizontalCenter: parent.horizontalCenter
             }
@@ -208,29 +205,29 @@ Rectangle {
 
     // Right Node: Grid
     Rectangle {
-        width: 136
-        height: 76
-        radius: 12
+        width: 138
+        height: 74
+        radius: Theme.radiusLg
         x: Math.min(parent.width - 105, parent.width * 0.78) - width / 2
         y: (parent.height - height) / 2
         color: Theme.gridSoft
-        border.color: Theme.grid
-        border.width: 1.2
+        border.color: Qt.rgba(Theme.grid.r, Theme.grid.g, Theme.grid.b, 0.55)
+        border.width: 1
 
         Column {
             anchors.centerIn: parent
             spacing: 2
             Text {
-                text: "GRID"
+                text: "Grid"
                 color: Theme.grid
-                font.pixelSize: 10
-                font.weight: Font.Bold
+                font.pixelSize: 11
+                font.weight: Font.DemiBold
                 anchors.horizontalCenter: parent.horizontalCenter
             }
             Text {
                 text: appController.formatPower(root.gridPowerW)
                 color: Theme.textPrimary
-                font.pixelSize: 16
+                font.pixelSize: 15
                 font.weight: Font.Bold
                 anchors.horizontalCenter: parent.horizontalCenter
             }
@@ -247,29 +244,29 @@ Rectangle {
 
     // Bottom Node: Home Load
     Rectangle {
-        width: 132
-        height: 64
-        radius: 12
+        width: 136
+        height: 60
+        radius: Theme.radiusLg
         x: (parent.width - width) / 2
-        y: parent.height - height - 24
+        y: parent.height - height - 22
         color: Theme.loadSoft
-        border.color: Theme.load
-        border.width: 1.2
+        border.color: Qt.rgba(Theme.load.r, Theme.load.g, Theme.load.b, 0.55)
+        border.width: 1
 
         Column {
             anchors.centerIn: parent
             spacing: 2
             Text {
-                text: "HOME LOAD"
+                text: "Home Load"
                 color: Theme.load
-                font.pixelSize: 10
-                font.weight: Font.Bold
+                font.pixelSize: 11
+                font.weight: Font.DemiBold
                 anchors.horizontalCenter: parent.horizontalCenter
             }
             Text {
                 text: appController.formatPower(root.consumptionPowerW)
                 color: Theme.textPrimary
-                font.pixelSize: 16
+                font.pixelSize: 15
                 font.weight: Font.Bold
                 anchors.horizontalCenter: parent.horizontalCenter
             }

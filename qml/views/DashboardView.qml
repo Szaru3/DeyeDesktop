@@ -7,63 +7,86 @@ Rectangle {
     id: root
     color: Theme.bgPrimary
 
+    component AdwSwitch: Switch {
+        id: sw
+        implicitWidth: 40
+        implicitHeight: 22
+        indicator: Rectangle {
+            implicitWidth: 40
+            implicitHeight: 22
+            radius: 11
+            color: sw.checked ? Theme.accent : "#4D4D4D"
+            Behavior on color { ColorAnimation { duration: 150 } }
+
+            Rectangle {
+                x: sw.checked ? parent.width - width - 3 : 3
+                anchors.verticalCenter: parent.verticalCenter
+                width: 16
+                height: 16
+                radius: 8
+                color: "#FFFFFF"
+                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+            }
+        }
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
 
-        // Top Header Bar
+        // AdwHeaderBar-style Top Bar
         Rectangle {
             Layout.fillWidth: true
-            implicitHeight: 62
-            color: Theme.bgSurface
+            implicitHeight: 54
+            color: Theme.bgHeader
 
             Rectangle {
                 anchors.bottom: parent.bottom
                 anchors.left: parent.left
                 anchors.right: parent.right
                 height: 1
-                color: Theme.border
+                color: Theme.separator
             }
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 20
-                anchors.rightMargin: 20
-                spacing: 12
+                anchors.leftMargin: 14
+                anchors.rightMargin: 14
+                spacing: 10
 
                 // Brand
                 RowLayout {
                     spacing: 8
                     Rectangle {
-                        width: 28
-                        height: 28
+                        width: 26
+                        height: 26
                         radius: 7
                         color: Theme.solarSoft
-                        border.color: Theme.solar
+                        border.color: Qt.rgba(Theme.solar.r, Theme.solar.g, Theme.solar.b, 0.5)
                         border.width: 1
                         Text {
                             anchors.centerIn: parent
                             text: "☀"
                             color: Theme.solar
-                            font.pixelSize: 14
+                            font.pixelSize: 13
                         }
                     }
                     Text {
                         text: "DeyeDesktop"
                         color: Theme.textPrimary
-                        font.pixelSize: 16
+                        font.pixelSize: 14
                         font.weight: Font.Bold
                     }
                 }
 
-                // Demo Badge
+                // Demo Pill
                 Rectangle {
                     visible: appController.demoMode
-                    implicitWidth: demoLbl.implicitWidth + 14
-                    implicitHeight: 22
-                    radius: 11
+                    implicitWidth: demoLbl.implicitWidth + 12
+                    implicitHeight: 20
+                    radius: Theme.radiusPill
                     color: Theme.solarSoft
-                    border.color: Theme.solar
+                    border.color: Qt.rgba(Theme.solar.r, Theme.solar.g, Theme.solar.b, 0.5)
                     Text {
                         id: demoLbl
                         anchors.centerIn: parent
@@ -74,11 +97,11 @@ Rectangle {
                     }
                 }
 
-                // Station Selector
+                // Plant / Station Selector (shows plant name + address in menu)
                 ComboBox {
                     id: stationCombo
-                    Layout.preferredWidth: 260
-                    Layout.maximumWidth: 340
+                    Layout.preferredWidth: 280
+                    Layout.maximumWidth: 360
                     implicitHeight: 36
                     model: appController.stationModel
                     textRole: "name"
@@ -87,54 +110,121 @@ Rectangle {
                         appController.selectStationByIndex(idx)
                     }
 
-                    contentItem: Text {
-                        leftPadding: 12
-                        rightPadding: 28
-                        text: stationCombo.displayText || "Select station..."
-                        color: Theme.textPrimary
-                        font.pixelSize: 13
-                        font.weight: Font.Medium
-                        verticalAlignment: Text.AlignVCenter
-                        elide: Text.ElideRight
+                    contentItem: Column {
+                        leftPadding: 10
+                        rightPadding: 26
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 0
+
+                        Text {
+                            width: stationCombo.width - 36
+                            text: stationCombo.displayText || "Select plant..."
+                            color: Theme.textPrimary
+                            font.pixelSize: 13
+                            font.weight: Font.DemiBold
+                            elide: Text.ElideRight
+                        }
+
+                        Text {
+                            visible: appController.selectedStationLocation.length > 0
+                            width: stationCombo.width - 36
+                            text: appController.selectedStationLocation
+                            color: Theme.textMuted
+                            font.pixelSize: 10
+                            elide: Text.ElideRight
+                        }
                     }
 
                     background: Rectangle {
                         radius: Theme.radiusSm
-                        color: Theme.bgInput
-                        border.color: stationCombo.activeFocus ? Theme.borderFocus : Theme.border
+                        color: stationCombo.hovered ? Theme.bgButtonHover : Theme.bgButton
+                        border.color: stationCombo.activeFocus ? Theme.borderFocus : "transparent"
+                        border.width: 1
                     }
 
                     popup: Popup {
-                        y: stationCombo.height + 4
-                        width: stationCombo.width
-                        implicitHeight: contentItem.implicitHeight + 8
-                        padding: 4
+                        y: stationCombo.height + 6
+                        width: Math.max(stationCombo.width, 340)
+                        implicitHeight: Math.min(360, contentItem.implicitHeight + 12)
+                        padding: 6
                         background: Rectangle {
                             color: Theme.bgElevated
                             border.color: Theme.border
-                            radius: Theme.radiusSm
+                            border.width: 1
+                            radius: Theme.radiusLg
                         }
                         contentItem: ListView {
                             clip: true
                             implicitHeight: contentHeight
+                            spacing: 2
                             model: stationCombo.popup.visible ? stationCombo.delegateModel : null
+                            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
                         }
                     }
 
                     delegate: ItemDelegate {
-                        width: stationCombo.width - 8
-                        contentItem: Text {
-                            text: model.name
-                            color: Theme.textPrimary
-                            font.pixelSize: 13
-                            elide: Text.ElideRight
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                        background: Rectangle {
-                            radius: 4
-                            color: highlighted ? Theme.bgSurface : "transparent"
-                        }
+                        id: plantDelegate
+                        width: ListView.view ? ListView.view.width : 328
+                        implicitHeight: model.location && model.location.length > 0 ? 52 : 38
                         highlighted: stationCombo.highlightedIndex === index
+
+                        readonly property color dotColor: (model.connectionStatus === "NORMAL" || model.connectionStatus === "ONLINE")
+                                                          ? Theme.success
+                                                          : (model.connectionStatus === "PARTIAL_OFFLINE")
+                                                            ? Theme.warning
+                                                            : (model.connectionStatus === "ALL_OFFLINE" || model.connectionStatus === "OFFLINE")
+                                                              ? Theme.errorText
+                                                              : Theme.textMuted
+
+                        background: Rectangle {
+                            radius: Theme.radiusSm
+                            color: plantDelegate.highlighted ? Theme.bgButtonHover
+                                 : (stationCombo.currentIndex === index ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.16) : "transparent")
+                        }
+
+                        contentItem: RowLayout {
+                            spacing: 10
+
+                            Rectangle {
+                                width: 8
+                                height: 8
+                                radius: 4
+                                color: plantDelegate.dotColor
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 2
+
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: model.name
+                                    color: Theme.textPrimary
+                                    font.pixelSize: 13
+                                    font.weight: stationCombo.currentIndex === index ? Font.Bold : Font.Medium
+                                    elide: Text.ElideRight
+                                }
+
+                                Text {
+                                    Layout.fillWidth: true
+                                    visible: model.location && model.location.length > 0
+                                    text: model.location
+                                    color: Theme.textSecondary
+                                    font.pixelSize: 11
+                                    elide: Text.ElideRight
+                                }
+                            }
+
+                            Text {
+                                visible: model.installedCapacityKw > 0
+                                text: model.installedCapacityKw.toFixed(1) + " kWp"
+                                color: Theme.textMuted
+                                font.pixelSize: 11
+                                font.weight: Font.Medium
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+                        }
                     }
                 }
 
@@ -144,47 +234,29 @@ Rectangle {
 
                 Item { Layout.fillWidth: true }
 
-                // Auto-Refresh Toggle
-                CheckBox {
-                    id: autoRefreshBox
-                    checked: appController.autoRefreshEnabled
-                    text: "Auto (" + appController.refreshIntervalSec + "s)"
-                    onToggled: appController.autoRefreshEnabled = checked
-
-                    contentItem: Text {
-                        leftPadding: autoRefreshBox.indicator.width + 6
-                        text: autoRefreshBox.text
+                // Auto-Refresh Switch
+                RowLayout {
+                    spacing: 8
+                    Text {
+                        text: "Auto (" + appController.refreshIntervalSec + "s)"
                         color: Theme.textSecondary
                         font.pixelSize: 12
-                        verticalAlignment: Text.AlignVCenter
                     }
-                    indicator: Rectangle {
-                        implicitWidth: 16
-                        implicitHeight: 16
-                        y: (parent.height - height) / 2
-                        radius: 4
-                        color: autoRefreshBox.checked ? Theme.accent : Theme.bgInput
-                        border.color: autoRefreshBox.checked ? Theme.accent : Theme.border
-                        Text {
-                            anchors.centerIn: parent
-                            visible: autoRefreshBox.checked
-                            text: "✓"
-                            color: Theme.bgPrimary
-                            font.pixelSize: 11
-                            font.weight: Font.Bold
-                        }
+                    AdwSwitch {
+                        checked: appController.autoRefreshEnabled
+                        onToggled: appController.autoRefreshEnabled = checked
                     }
                 }
 
-                // Refresh Button
+                // Flat Adwaita Header Button: Refresh
                 Button {
                     implicitHeight: 34
-                    implicitWidth: 96
+                    implicitWidth: 88
                     enabled: !appController.busy
                     onClicked: appController.refreshDashboard()
 
                     contentItem: Text {
-                        text: appController.busy ? "Updating..." : "Refresh"
+                        text: appController.busy ? "Updating…" : "Refresh"
                         color: Theme.textPrimary
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
@@ -194,22 +266,21 @@ Rectangle {
 
                     background: Rectangle {
                         radius: Theme.radiusSm
-                        color: parent.hovered ? Theme.bgElevated : Theme.bgInput
-                        border.color: Theme.border
+                        color: parent.hovered ? Theme.bgButtonHover : Theme.bgButton
                     }
                 }
 
-                // Logout Button
+                // Flat Adwaita Header Button: Sign Out
                 Button {
                     implicitHeight: 34
-                    implicitWidth: 80
+                    implicitWidth: 78
                     onClicked: appController.logout()
 
                     contentItem: Text {
                         text: "Sign Out"
-                        color: "#FDA4AF"
+                        color: Theme.errorText
                         font.pixelSize: 12
-                        font.weight: Font.Medium
+                        font.weight: Font.DemiBold
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -217,63 +288,62 @@ Rectangle {
                     background: Rectangle {
                         radius: Theme.radiusSm
                         color: parent.hovered ? Theme.errorSoft : "transparent"
-                        border.color: Theme.border
                     }
                 }
             }
         }
 
-        // Scrollable Dashboard Body
+        // Scrollable AdwClamp Dashboard Body
         Flickable {
             Layout.fillWidth: true
             Layout.fillHeight: true
             contentWidth: width
-            contentHeight: bodyColumn.implicitHeight + 40
+            contentHeight: bodyColumn.implicitHeight + 48
             clip: true
 
             ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
             ColumnLayout {
                 id: bodyColumn
-                anchors.left: parent.left
-                anchors.right: parent.right
+                width: Math.min(980, parent.width - 40)
+                anchors.horizontalCenter: parent.horizontalCenter
                 anchors.top: parent.top
-                anchors.margins: 20
-                spacing: 18
+                anchors.topMargin: 22
+                spacing: 16
 
-                // Error Banner (if polling fails)
+                // Error Banner
                 Rectangle {
                     visible: appController.errorMessage.length > 0
                     Layout.fillWidth: true
                     implicitHeight: dashErr.implicitHeight + 18
-                    radius: Theme.radiusSm
+                    radius: Theme.radiusMd
                     color: Theme.errorSoft
-                    border.color: Theme.error
+                    border.color: Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.6)
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.margins: 9
+                        anchors.margins: 10
                         Text {
                             id: dashErr
                             Layout.fillWidth: true
                             text: appController.errorMessage
-                            color: "#FDA4AF"
+                            color: Theme.errorText
                             font.pixelSize: 12
                             wrapMode: Text.WordWrap
                         }
                         Button {
                             text: "Dismiss"
-                            implicitHeight: 24
+                            implicitHeight: 26
                             onClicked: appController.clearError()
                             contentItem: Text {
                                 text: parent.text
-                                color: "#FDA4AF"
+                                color: Theme.errorText
                                 font.pixelSize: 11
+                                font.weight: Font.DemiBold
                             }
                             background: Rectangle {
-                                radius: 4
-                                color: "transparent"
-                                border.color: Theme.error
+                                radius: Theme.radiusSm
+                                color: parent.hovered ? Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.25) : "transparent"
                             }
                         }
                     }
@@ -285,9 +355,9 @@ Rectangle {
                     spacing: 12
 
                     ColumnLayout {
-                        spacing: 2
+                        spacing: 3
                         Text {
-                            text: appController.selectedStationName || "No Station Selected"
+                            text: appController.selectedStationName || "No Plant Selected"
                             color: Theme.textPrimary
                             font.pixelSize: 20
                             font.weight: Font.Bold
@@ -296,10 +366,10 @@ Rectangle {
                             text: {
                                 var parts = [];
                                 if (appController.installedCapacityKw > 0)
-                                    parts.push("Installed: " + appController.installedCapacityKw.toFixed(1) + " kWp");
+                                    parts.push(appController.installedCapacityKw.toFixed(1) + " kWp");
                                 if (appController.selectedStationLocation.length > 0)
                                     parts.push(appController.selectedStationLocation);
-                                return parts.length > 0 ? parts.join("  •  ") : "Real-time station overview";
+                                return parts.length > 0 ? parts.join("  •  ") : "Real-time plant overview";
                             }
                             color: Theme.textSecondary
                             font.pixelSize: 13
@@ -309,16 +379,16 @@ Rectangle {
                     Item { Layout.fillWidth: true }
 
                     Text {
-                        text: "Last updated: " + appController.lastUpdateText
+                        text: "Updated " + appController.lastUpdateText
                         color: Theme.textMuted
                         font.pixelSize: 12
                     }
                 }
 
-                // Live Power Flow Diagram
+                // Live Power Flow Card
                 PowerFlowDiagram {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 310
+                    Layout.preferredHeight: 300
                     generationPowerW: appController.generationPowerW
                     consumptionPowerW: appController.consumptionPowerW
                     batteryPowerW: appController.batteryPowerW
@@ -327,18 +397,18 @@ Rectangle {
                     gridPowerW: appController.gridPowerW
                 }
 
-                // 4 KPI Metric Cards
+                // 4 KPI Cards
                 GridLayout {
                     Layout.fillWidth: true
-                    columns: width >= 880 ? 4 : 2
-                    columnSpacing: 14
-                    rowSpacing: 14
+                    columns: width >= 800 ? 4 : 2
+                    columnSpacing: 12
+                    rowSpacing: 12
 
                     MetricCard {
                         Layout.fillWidth: true
                         title: "Solar Generation"
                         valueText: appController.formatPower(appController.generationPowerW)
-                        subtitle: appController.generationPowerW > 10 ? "Producing solar power" : "Standby / Night"
+                        subtitle: appController.generationPowerW > 10 ? "Producing power" : "Standby / Night"
                         accentColor: Theme.solar
                     }
 
@@ -350,8 +420,8 @@ Rectangle {
                                    : appController.formatPower(appController.batteryPowerW)
                         subtitle: {
                             var p = appController.formatPower(appController.batteryPowerW);
-                            if (appController.batteryPowerW > 10) return "Charging at " + p;
-                            if (appController.batteryPowerW < -10) return "Discharging at " + p;
+                            if (appController.batteryPowerW > 10) return "Charging • " + p;
+                            if (appController.batteryPowerW < -10) return "Discharging • " + p;
                             return "Idle";
                         }
                         accentColor: Theme.battery
@@ -365,7 +435,7 @@ Rectangle {
                         valueText: appController.formatPower(appController.gridPowerW)
                         subtitle: appController.gridPowerW > 10 ? "Importing from grid"
                                 : appController.gridPowerW < -10 ? "Exporting to grid"
-                                : "Zero export / Balanced"
+                                : "Balanced"
                         accentColor: Theme.grid
                     }
 
@@ -373,7 +443,7 @@ Rectangle {
                         Layout.fillWidth: true
                         title: "Home Load"
                         valueText: appController.formatPower(appController.consumptionPowerW)
-                        subtitle: "Current household consumption"
+                        subtitle: "Current consumption"
                         accentColor: Theme.load
                     }
                 }
