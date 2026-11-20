@@ -1,0 +1,25 @@
+# Build directories
+build/
+out/
+cmake-build-*/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+CMakeUserPresets.json
+cmake_install.cmake
+Makefile
+*.ninja
+.ninja_deps
+.ninja_log
+
+# Qt Creator / IDE files
+CMakeLists.txt.user*
+.vscode/
+.idea/
+.cache/
+compile_commands.json
+
+# OS artifacts
+.DS_Store
+Thumbs.db
