@@ -32,6 +32,8 @@ add_library(deye_core STATIC
     src/viewmodel/StationListModel.cpp
     src/viewmodel/DeviceListModel.h
     src/viewmodel/DeviceListModel.cpp
+    src/viewmodel/AlertListModel.h
+    src/viewmodel/AlertListModel.cpp
     src/viewmodel/InverterSettingsController.h
     src/viewmodel/InverterSettingsController.cpp
     src/viewmodel/AppController.h
@@ -44,8 +46,17 @@ target_include_directories(deye_core PUBLIC
 
 target_link_libraries(deye_core PUBLIC
     Qt6::Core
+    Qt6::Widgets
     Qt6::Network
 )
+
+if(UNIX AND NOT APPLE)
+    find_package(Qt6 6.5 QUIET COMPONENTS DBus)
+    if(Qt6DBus_FOUND)
+        target_link_libraries(deye_core PUBLIC Qt6::DBus)
+        target_compile_definitions(deye_core PRIVATE DEYE_HAS_DBUS=1)
+    endif()
+endif()
 
 qt_add_executable(deye-desktop
     src/main.cpp
@@ -55,15 +66,22 @@ set_source_files_properties(qml/theme/Theme.qml PROPERTIES
     QT_QML_SINGLETON_TYPE TRUE
 )
 
+set_source_files_properties(qml/theme/I18n.qml PROPERTIES
+    QT_QML_SINGLETON_TYPE TRUE
+)
+
 qt_add_qml_module(deye-desktop
     URI DeyeDesktop
     VERSION 1.0
     QML_FILES
         qml/Main.qml
         qml/theme/Theme.qml
+        qml/theme/I18n.qml
         qml/components/StatusBadge.qml
         qml/components/MetricCard.qml
         qml/components/PowerFlowDiagram.qml
+        qml/components/PowerProfileChart.qml
+        qml/components/EnergyHistoryChart.qml
         qml/views/LoginView.qml
         qml/views/DashboardView.qml
         qml/views/InverterSettingsDialog.qml

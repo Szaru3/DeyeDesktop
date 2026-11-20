@@ -2,6 +2,7 @@
 
 #include "api/DeyeModels.h"
 
+#include <QMap>
 #include <QSettings>
 #include <QString>
 
@@ -23,6 +24,7 @@ struct SavedSettings {
     qint64 lastStationId = 0;
     int refreshIntervalSec = 120;
     bool autoRefreshEnabled = true;
+    QString language = QStringLiteral("en");
 };
 
 class SettingsStore {
@@ -33,6 +35,10 @@ public:
     void saveLoginSettings(const SavedSettings &settings);
     void saveLastStationId(qint64 stationId);
     void saveRefreshSettings(bool autoRefreshEnabled, int intervalSec);
+    void saveLanguage(const QString &lang);
+
+    [[nodiscard]] QMap<QString, QString> loadCustomDeviceNames() const;
+    void saveCustomDeviceName(const QString &deviceSn, const QString &customName);
 
 private:
     QSettings m_settings;

@@ -2,6 +2,7 @@
 
 #include <QDateTime>
 #include <QJsonObject>
+#include <QMap>
 #include <QString>
 #include <QVector>
 #include <QtGlobal>
@@ -165,6 +166,72 @@ struct OrderResult {
     QString orderId;
 
     static OrderResult fromJson(const QJsonObject &root);
+};
+
+struct AlertInfo {
+    QString alertId;
+    QString deviceSn;
+    QString deviceType;
+    QString alertCode;
+    QString alertMessage;
+    QString level;      // "Fault" or "Warning"
+    bool isActive = false;
+    qint64 startTime = 0; // Unix seconds
+    qint64 endTime = 0;   // Unix seconds (0 if still active)
+
+    static AlertInfo fromJson(const QJsonObject &obj);
+};
+
+struct AlertListResult {
+    bool success = false;
+    QString code;
+    QString message;
+    int total = 0;
+    QVector<AlertInfo> alerts;
+
+    static AlertListResult fromJson(const QJsonObject &root);
+};
+
+// Single timestamp point on the daily Power Profile chart (in kW and %)
+struct PowerProfilePoint {
+    QString timeLabel;       // "HH:MM"
+    double hourOfDay = 0.0;  // 0.0 .. 24.0
+    double pvKw = 0.0;
+    double gridKw = 0.0;     // + importing, - exporting
+    double batteryKw = 0.0;  // + discharging, - charging (or signed per Deye graph)
+    double consumptionKw = 0.0;
+    double soc = 0.0;
+    bool hasSoc = false;
+};
+
+struct PowerProfileResult {
+    bool success = false;
+    QString code;
+    QString message;
+    QVector<PowerProfilePoint> points;
+
+    static PowerProfileResult fromJson(const QJsonObject &root);
+};
+
+// Single bucket on the Generation & Usage History stacked bar chart (in kWh)
+struct EnergyHistoryItem {
+    QString label;           // e.g. "10", "Nov", "2026"
+    QString fullDate;        // e.g. "2026-11-10"
+    double productionKwh = 0.0;
+    double dischargeKwh = 0.0;
+    double purchasedKwh = 0.0;
+    double consumptionKwh = 0.0;
+    double chargeKwh = 0.0;
+    double gridFeedInKwh = 0.0;
+};
+
+struct EnergyHistoryResult {
+    bool success = false;
+    QString code;
+    QString message;
+    QVector<EnergyHistoryItem> items;
+
+    static EnergyHistoryResult fromJson(const QJsonObject &root, int granularity);
 };
 
 // Normalized live telemetry for a station:

@@ -692,4 +692,250 @@ OrderResult OrderResult::fromJson(const QJsonObject &root)
     return r;
 }
 
+AlertInfo AlertInfo::fromJson(const QJsonObject &obj)
+{
+    AlertInfo a;
+    a.alertId = obj.value(QStringLiteral("alertId")).toVariant().toString();
+    if (a.alertId.isEmpty()) {
+        a.alertId = obj.value(QStringLiteral("id")).toVariant().toString();
+    }
+    a.deviceSn = obj.value(QStringLiteral("deviceSn")).toString().trimmed();
+    a.deviceType = normalizeDeviceType(obj.value(QStringLiteral("deviceType")));
+    a.alertCode = obj.value(QStringLiteral("alertCode")).toString().trimmed();
+    a.alertMessage = obj.value(QStringLiteral("alertMessage")).toString().trimmed();
+    if (a.alertMessage.isEmpty()) {
+        a.alertMessage = obj.value(QStringLiteral("alertName")).toString().trimmed();
+    }
+    if (a.alertMessage.isEmpty()) {
+        a.alertMessage = QStringLiteral("Device alert");
+    }
+
+    const QString lvl = obj.value(QStringLiteral("level")).toString().trimmed();
+    if (lvl.compare(QStringLiteral("fault"), Qt::CaseInsensitive) == 0
+        || lvl == QStringLiteral("2")
+        || a.alertCode.startsWith(QLatin1Char('F'), Qt::CaseInsensitive)) {
+        a.level = QStringLiteral("Fault");
+    } else if (!lvl.isEmpty()) {
+        a.level = lvl;
+    } else {
+        a.level = QStringLiteral("Warning");
+    }
+
+    qint64 st = readInt64(obj, QStringLiteral("startTime"), readInt64(obj, QStringLiteral("alertTime"), 0));
+    if (st > 100000000000LL) st /= 1000;
+    a.startTime = st;
+
+    qint64 et = readInt64(obj, QStringLiteral("endTime"), 0);
+    if (et > 100000000000LL) et /= 1000;
+    a.endTime = et;
+
+    // status == 0 or endTime == 0 indicates active/ongoing alert
+    if (obj.contains(QStringLiteral("status")) && obj.value(QStringLiteral("status")).isDouble()) {
+        a.isActive = (obj.value(QStringLiteral("status")).toInt() == 0);
+    } else {
+        a.isActive = (a.endTime == 0);
+    }
+
+    if (a.alertId.isEmpty()) {
+        a.alertId = QStringLiteral("%1_%2_%3").arg(a.deviceSn, a.alertCode).arg(a.startTime);
+    }
+    return a;
+}
+
+AlertListResult AlertListResult::fromJson(const QJsonObject &root)
+{
+    AlertListResult res;
+    res.success = isApiSuccess(root, &res.code, &res.message);
+    if (!res.success) {
+        return res;
+    }
+
+    const QJsonObject payload = (root.contains(QStringLiteral("alertList"))
+                                 || !root.value(QStringLiteral("data")).isObject())
+        ? root
+        : root.value(QStringLiteral("data")).toObject();
+
+    res.total = static_cast<int>(readInt64(payload, QStringLiteral("total"), 0));
+    const QJsonArray arr = payload.value(QStringLiteral("alertList")).toArray();
+    res.alerts.reserve(arr.size());
+    for (const QJsonValue &v : arr) {
+        if (v.isObject()) {
+            res.alerts.push_back(AlertInfo::fromJson(v.toObject()));
+        }
+    }
+    if (res.total == 0 && !res.alerts.isEmpty()) {
+        res.total = static_cast<int>(res.alerts.size());
+    }
+    return res;
+}
+
+PowerProfileResult PowerProfileResult::fromJson(const QJsonObject &root)
+{
+    PowerProfileResult res;
+    res.success = isApiSuccess(root, &res.code, &res.message);
+    if (!res.success) {
+        return res;
+    }
+
+    const QJsonObject payload = (root.contains(QStringLiteral("stationDataItems"))
+                                 || !root.value(QStringLiteral("data")).isObject())
+        ? root
+        : root.value(QStringLiteral("data")).toObject();
+
+    const QJsonArray arr = payload.value(QStringLiteral("stationDataItems")).toArray();
+    res.points.reserve(arr.size());
+
+    for (const QJsonValue &v : arr) {
+        if (!v.isObject()) continue;
+        const QJsonObject o = v.toObject();
+        PowerProfilePoint pt;
+
+        // Timestamp can be timeStamp (Deye default), dateTime (Unix sec), or time ("HH:MM" / "YYYY-MM-DD HH:MM:SS")
+        qint64 ts = readInt64(o, QStringLiteral("timeStamp"), readInt64(o, QStringLiteral("dateTime"), 0));
+        if (ts > 100000000000LL) ts /= 1000;
+        if (ts > 0) {
+            const QDateTime dt = QDateTime::fromSecsSinceEpoch(ts);
+            pt.timeLabel = dt.toString(QStringLiteral("HH:mm"));
+            pt.hourOfDay = dt.time().hour() + dt.time().minute() / 60.0;
+        } else {
+            const QString tStr = o.value(QStringLiteral("time")).toString().trimmed();
+            const QDateTime parsedDt = QDateTime::fromString(tStr, QStringLiteral("yyyy-MM-dd HH:mm:ss"));
+            if (parsedDt.isValid()) {
+                pt.timeLabel = parsedDt.toString(QStringLiteral("HH:mm"));
+                pt.hourOfDay = parsedDt.time().hour() + parsedDt.time().minute() / 60.0;
+            } else {
+                const QString hm = normalizeTouTime(o.value(QStringLiteral("time")));
+                const QStringList parts = hm.split(QLatin1Char(':'));
+                if (parts.size() == 2) {
+                    pt.timeLabel = hm;
+                    pt.hourOfDay = parts[0].toInt() + parts[1].toInt() / 60.0;
+                } else {
+                    continue;
+                }
+            }
+        }
+
+        double genW = 0.0, consW = 0.0, wireW = 0.0, purchaseW = 0.0, gridW = 0.0;
+        double battW = 0.0, chgW = 0.0, disW = 0.0, socVal = 0.0;
+
+        const bool hasGen = readOptionalDouble(o, QStringLiteral("generationPower"), genW);
+        const bool hasCons = readOptionalDouble(o, QStringLiteral("consumptionPower"), consW)
+                             || readOptionalDouble(o, QStringLiteral("usePower"), consW);
+        const bool hasWire = readOptionalDouble(o, QStringLiteral("wirePower"), wireW);
+        const bool hasPurchase = readOptionalDouble(o, QStringLiteral("purchasePower"), purchaseW);
+        const bool hasGrid = readOptionalDouble(o, QStringLiteral("gridPower"), gridW);
+        const bool hasChg = readOptionalDouble(o, QStringLiteral("chargePower"), chgW);
+        const bool hasDis = readOptionalDouble(o, QStringLiteral("dischargePower"), disW);
+        const bool hasBatt = readOptionalDouble(o, QStringLiteral("batteryPower"), battW);
+        pt.hasSoc = readOptionalDouble(o, QStringLiteral("batterySOC"), socVal);
+
+        // Skip empty placeholder buckets where all telemetry values are null
+        if (!hasGen && !hasCons && !hasWire && !hasPurchase && !hasGrid && !hasChg && !hasDis && !hasBatt && !pt.hasSoc) {
+            continue;
+        }
+
+        double resolvedGridW = 0.0;
+        if (hasWire && std::abs(wireW) > 0.01) resolvedGridW = wireW;
+        else if (hasPurchase && std::abs(purchaseW) > 0.01) resolvedGridW = std::abs(purchaseW);
+        else if (hasGrid) resolvedGridW = gridW;
+
+        double resolvedBattW = 0.0;
+        // Match Deye Power Profile convention: negative = charging, positive = discharging
+        if (hasChg && std::abs(chgW) > 0.01 && (!hasDis || std::abs(disW) <= 0.01)) {
+            resolvedBattW = -std::abs(chgW);
+        } else if (hasDis && std::abs(disW) > 0.01 && (!hasChg || std::abs(chgW) <= 0.01)) {
+            resolvedBattW = std::abs(disW);
+        } else if (hasBatt) {
+            resolvedBattW = battW;
+        }
+
+        pt.pvKw = std::max(0.0, genW) / 1000.0;
+        pt.consumptionKw = std::max(0.0, consW) / 1000.0;
+        pt.gridKw = resolvedGridW / 1000.0;
+        pt.batteryKw = resolvedBattW / 1000.0;
+        if (pt.hasSoc) {
+            pt.soc = std::clamp(socVal, 0.0, 100.0);
+        }
+
+        res.points.push_back(pt);
+    }
+
+    std::sort(res.points.begin(), res.points.end(), [](const PowerProfilePoint &a, const PowerProfilePoint &b) {
+        return a.hourOfDay < b.hourOfDay;
+    });
+    return res;
+}
+
+EnergyHistoryResult EnergyHistoryResult::fromJson(const QJsonObject &root, int granularity)
+{
+    EnergyHistoryResult res;
+    res.success = isApiSuccess(root, &res.code, &res.message);
+    if (!res.success) {
+        return res;
+    }
+
+    const QJsonObject payload = (root.contains(QStringLiteral("stationDataItems"))
+                                 || !root.value(QStringLiteral("data")).isObject())
+        ? root
+        : root.value(QStringLiteral("data")).toObject();
+
+    const QJsonArray arr = payload.value(QStringLiteral("stationDataItems")).toArray();
+    res.items.reserve(arr.size());
+
+    for (const QJsonValue &v : arr) {
+        if (!v.isObject()) continue;
+        const QJsonObject o = v.toObject();
+        EnergyHistoryItem item;
+
+        const int year = static_cast<int>(readInt64(o, QStringLiteral("year"), 0));
+        const int month = static_cast<int>(readInt64(o, QStringLiteral("month"), 0));
+        const int day = static_cast<int>(readInt64(o, QStringLiteral("day"), 0));
+        const QString timeStr = o.value(QStringLiteral("time")).toString().trimmed();
+
+        if (!timeStr.isEmpty()) {
+            item.fullDate = timeStr;
+            const QStringList parts = timeStr.split(QLatin1Char('-'));
+            if (granularity == 2 && parts.size() >= 3) {
+                item.label = QString::number(parts[2].toInt());
+            } else if (granularity == 3 && parts.size() >= 2) {
+                item.label = QString::number(parts[1].toInt());
+            } else {
+                item.label = parts.value(0, timeStr);
+            }
+        } else if (granularity == 2 && day > 0) {
+            item.label = QString::number(day);
+            item.fullDate = QStringLiteral("%1-%2-%3").arg(year).arg(month, 2, 10, QLatin1Char('0')).arg(day, 2, 10, QLatin1Char('0'));
+        } else if (granularity == 3 && month > 0) {
+            item.label = QString::number(month);
+            item.fullDate = QStringLiteral("%1-%2").arg(year).arg(month, 2, 10, QLatin1Char('0'));
+        } else if (year > 0) {
+            item.label = QString::number(year);
+            item.fullDate = item.label;
+        }
+
+        readOptionalDouble(o, QStringLiteral("generationValue"), item.productionKwh);
+        readOptionalDouble(o, QStringLiteral("dischargeValue"), item.dischargeKwh);
+        if (!readOptionalDouble(o, QStringLiteral("purchaseValue"), item.purchasedKwh)) {
+            readOptionalDouble(o, QStringLiteral("buyValue"), item.purchasedKwh);
+        }
+        if (!readOptionalDouble(o, QStringLiteral("consumptionValue"), item.consumptionKwh)) {
+            readOptionalDouble(o, QStringLiteral("useValue"), item.consumptionKwh);
+        }
+        readOptionalDouble(o, QStringLiteral("chargeValue"), item.chargeKwh);
+        if (!readOptionalDouble(o, QStringLiteral("gridValue"), item.gridFeedInKwh)) {
+            readOptionalDouble(o, QStringLiteral("sellValue"), item.gridFeedInKwh);
+        }
+
+        item.productionKwh = std::max(0.0, item.productionKwh);
+        item.dischargeKwh = std::max(0.0, item.dischargeKwh);
+        item.purchasedKwh = std::max(0.0, item.purchasedKwh);
+        item.consumptionKwh = std::max(0.0, item.consumptionKwh);
+        item.chargeKwh = std::max(0.0, item.chargeKwh);
+        item.gridFeedInKwh = std::max(0.0, item.gridFeedInKwh);
+
+        res.items.push_back(item);
+    }
+    return res;
+}
+
 } // namespace deye

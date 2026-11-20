@@ -9,13 +9,13 @@ Rectangle {
 
     // 0: Overview, 1: Devices, 2: Alerts, 3: Plant Info
     property int currentSection: 0
-    readonly property var sectionTitles: ["Overview", "Devices", "Alerts", "Plant Info"]
+    readonly property var sectionKeys: ["Overview", "Devices", "Alerts", "Plant Info"]
 
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
 
-        // Native-styled Header Bar
+        // Native-styled Header Bar (equal 16px horizontal padding)
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: 54
@@ -31,17 +31,17 @@ Rectangle {
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 12
-                anchors.rightMargin: 14
-                spacing: 10
+                anchors.leftMargin: Theme.cardPadding
+                anchors.rightMargin: Theme.cardPadding
+                spacing: Theme.spacingMd
 
-                // Hamburger Menu Button (replaces DeyeDesktop logo)
+                // Hamburger Menu Button
                 ToolButton {
                     id: menuButton
                     text: "☰"
                     font.pixelSize: 17
                     ToolTip.visible: hovered
-                    ToolTip.text: "Navigation menu"
+                    ToolTip.text: I18n.t("Navigation menu")
                     onClicked: navMenu.open()
 
                     ButtonGroup {
@@ -54,7 +54,7 @@ Rectangle {
                         y: menuButton.height + 4
 
                         MenuItem {
-                            text: "Overview"
+                            text: I18n.t("Overview")
                             checkable: true
                             autoExclusive: true
                             ButtonGroup.group: navGroup
@@ -62,7 +62,7 @@ Rectangle {
                             onTriggered: root.currentSection = 0
                         }
                         MenuItem {
-                            text: "Devices"
+                            text: I18n.t("Devices")
                             checkable: true
                             autoExclusive: true
                             ButtonGroup.group: navGroup
@@ -70,7 +70,9 @@ Rectangle {
                             onTriggered: root.currentSection = 1
                         }
                         MenuItem {
-                            text: "Alerts"
+                            text: appController.activeAlertCount > 0
+                                  ? (I18n.t("Alerts") + " (" + appController.activeAlertCount + ")")
+                                  : I18n.t("Alerts")
                             checkable: true
                             autoExclusive: true
                             ButtonGroup.group: navGroup
@@ -78,7 +80,7 @@ Rectangle {
                             onTriggered: root.currentSection = 2
                         }
                         MenuItem {
-                            text: "Plant Info"
+                            text: I18n.t("Plant Info")
                             checkable: true
                             autoExclusive: true
                             ButtonGroup.group: navGroup
@@ -88,10 +90,10 @@ Rectangle {
                     }
                 }
 
-                // Active section label (fixed width so header items stay stationary)
+                // Active section label (fixed width so plant selector never shifts)
                 Label {
-                    Layout.preferredWidth: 86
-                    text: root.sectionTitles[root.currentSection]
+                    Layout.preferredWidth: 112
+                    text: I18n.t(root.sectionKeys[root.currentSection])
                     font.pixelSize: 14
                     font.weight: Font.Bold
                     elide: Text.ElideRight
@@ -115,7 +117,7 @@ Rectangle {
                     }
                 }
 
-                // Native Plant / Station Selector (shows plant name + address in menu)
+                // Native Plant / Station Selector
                 ComboBox {
                     id: stationCombo
                     Layout.preferredWidth: 280
@@ -199,7 +201,7 @@ Rectangle {
                     implicitHeight: 32
                     leftPadding: 14
                     rightPadding: 14
-                    text: "Sign Out"
+                    text: I18n.t("Sign Out")
                     onClicked: appController.logout()
 
                     contentItem: Label {
@@ -222,36 +224,36 @@ Rectangle {
             }
         }
 
-        // Scrollable AdwClamp Dashboard Body
+        // Scrollable Clamped Body (equal 20px margins & 16px spacing)
         Flickable {
             Layout.fillWidth: true
             Layout.fillHeight: true
             contentWidth: width
-            contentHeight: bodyColumn.implicitHeight + 48
+            contentHeight: bodyColumn.implicitHeight + Theme.pageMargin * 2
             clip: true
 
             ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
             ColumnLayout {
                 id: bodyColumn
-                width: Math.min(980, parent.width - 40)
+                width: Math.min(980, parent.width - Theme.pageMargin * 2)
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.top: parent.top
-                anchors.topMargin: 22
-                spacing: 16
+                anchors.topMargin: Theme.pageMargin
+                spacing: Theme.spacingLg
 
                 // Error Banner
                 Rectangle {
                     visible: appController.errorMessage.length > 0
                     Layout.fillWidth: true
-                    implicitHeight: dashErr.implicitHeight + 18
+                    implicitHeight: dashErr.implicitHeight + 24
                     radius: Theme.radiusMd
                     color: Theme.errorSoft
                     border.color: Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.55)
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.margins: 10
+                        anchors.margins: 12
                         Label {
                             id: dashErr
                             Layout.fillWidth: true
@@ -262,7 +264,7 @@ Rectangle {
                         }
                         Button {
                             flat: true
-                            text: "Dismiss"
+                            text: I18n.t("Dismiss")
                             onClicked: appController.clearError()
                         }
                     }
@@ -271,12 +273,12 @@ Rectangle {
                 // Station Summary Strip
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 12
+                    spacing: Theme.spacingMd
 
                     ColumnLayout {
                         spacing: 3
                         Label {
-                            text: appController.selectedStationName || "No Plant Selected"
+                            text: appController.selectedStationName || I18n.t("No Plant Selected")
                             font.pixelSize: 20
                             font.weight: Font.Bold
                         }
@@ -287,7 +289,7 @@ Rectangle {
                                     parts.push(appController.installedCapacityKw.toFixed(1) + " kWp");
                                 if (appController.selectedStationLocation.length > 0)
                                     parts.push(appController.selectedStationLocation);
-                                return parts.length > 0 ? parts.join("  •  ") : "Real-time plant overview";
+                                return parts.length > 0 ? parts.join("  •  ") : I18n.t("Real-time plant overview");
                             }
                             color: Theme.textSecondary
                             font.pixelSize: 13
@@ -297,21 +299,21 @@ Rectangle {
                     Item { Layout.fillWidth: true }
 
                     Label {
-                        text: "Updated " + appController.lastUpdateText
+                        text: I18n.t("Updated") + " " + appController.lastUpdateText
                         color: Theme.textMuted
                         font.pixelSize: 12
                     }
                 }
 
-                // Section 0: Overview
+                // ===================== SECTION 0: OVERVIEW =====================
                 ColumnLayout {
                     visible: root.currentSection === 0
                     Layout.fillWidth: true
-                    spacing: 16
+                    spacing: Theme.spacingLg
 
                     PowerFlowDiagram {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 300
+                        Layout.preferredHeight: 340
                         generationPowerW: appController.generationPowerW
                         consumptionPowerW: appController.consumptionPowerW
                         batteryPowerW: appController.batteryPowerW
@@ -323,28 +325,28 @@ Rectangle {
                     GridLayout {
                         Layout.fillWidth: true
                         columns: width >= 800 ? 4 : 2
-                        columnSpacing: 12
-                        rowSpacing: 12
+                        columnSpacing: Theme.spacingLg
+                        rowSpacing: Theme.spacingLg
 
                         MetricCard {
                             Layout.fillWidth: true
-                            title: "Solar Generation"
+                            title: I18n.t("Solar Generation")
                             valueText: appController.formatPower(appController.generationPowerW)
-                            subtitle: appController.generationPowerW > 10 ? "Producing power" : "Standby / Night"
+                            subtitle: appController.generationPowerW > 10 ? I18n.t("Producing power") : I18n.t("Standby / Night")
                             accentColor: Theme.solar
                         }
 
                         MetricCard {
                             Layout.fillWidth: true
-                            title: "Battery"
+                            title: I18n.t("Battery")
                             valueText: appController.hasBatterySoc
                                        ? (Math.round(appController.batterySoc) + "%")
                                        : appController.formatPower(appController.batteryPowerW)
                             inlineSubtitle: {
                                 var p = appController.formatPower(appController.batteryPowerW);
-                                if (appController.batteryPowerW > 10) return "Charging • " + p;
-                                if (appController.batteryPowerW < -10) return "Discharging • " + p;
-                                return "Idle";
+                                if (appController.batteryPowerW > 10) return I18n.t("Charging") + " • " + p;
+                                if (appController.batteryPowerW < -10) return I18n.t("Discharging") + " • " + p;
+                                return I18n.t("Idle");
                             }
                             subtitle: ""
                             accentColor: Theme.battery
@@ -354,25 +356,45 @@ Rectangle {
 
                         MetricCard {
                             Layout.fillWidth: true
-                            title: "Grid"
+                            title: I18n.t("Grid")
                             valueText: appController.formatPower(appController.gridPowerW)
-                            subtitle: appController.gridPowerW > 10 ? "Importing from grid"
-                                    : appController.gridPowerW < -10 ? "Exporting to grid"
-                                    : "Balanced"
+                            subtitle: appController.gridPowerW > 10 ? I18n.t("Importing from grid")
+                                    : appController.gridPowerW < -10 ? I18n.t("Exporting to grid")
+                                    : I18n.t("Balanced")
                             accentColor: Theme.grid
                         }
 
                         MetricCard {
                             Layout.fillWidth: true
-                            title: "Home Load"
+                            title: I18n.t("Home Load")
                             valueText: appController.formatPower(appController.consumptionPowerW)
-                            subtitle: "Current consumption"
+                            subtitle: I18n.t("Current consumption")
                             accentColor: Theme.load
                         }
                     }
+
+                    PowerProfileChart {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 330
+                        points: appController.powerProfilePoints
+                        dateText: appController.powerProfileDateText
+                        onPreviousDay: appController.shiftPowerProfileDate(-1)
+                        onNextDay: appController.shiftPowerProfileDate(1)
+                    }
+
+                    EnergyHistoryChart {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 330
+                        items: appController.energyHistoryItems
+                        mode: appController.energyHistoryMode
+                        periodText: appController.energyHistoryMode === 2 ? I18n.t("All Years") : appController.energyHistoryPeriodText
+                        onModeSelected: function(newMode) { appController.setEnergyHistoryMode(newMode) }
+                        onPreviousPeriod: appController.shiftEnergyHistoryPeriod(-1)
+                        onNextPeriod: appController.shiftEnergyHistoryPeriod(1)
+                    }
                 }
 
-                // Section 1: Devices
+                // ===================== SECTION 1: DEVICES =====================
                 Rectangle {
                     visible: root.currentSection === 1
                     Layout.fillWidth: true
@@ -395,13 +417,13 @@ Rectangle {
 
                         Label {
                             Layout.alignment: Qt.AlignHCenter
-                            text: appController.busy ? "Loading devices…" : "No Devices Found"
+                            text: appController.busy ? I18n.t("Loading devices…") : I18n.t("No Devices Found")
                             font.pixelSize: 16
                             font.weight: Font.Bold
                         }
                         Label {
                             Layout.alignment: Qt.AlignHCenter
-                            text: "No inverters, data loggers, or batteries were returned for this plant."
+                            text: I18n.t("No inverters, data loggers, or batteries were returned for this plant.")
                             color: Theme.textSecondary
                         }
                     }
@@ -423,10 +445,9 @@ Rectangle {
 
                                 RowLayout {
                                     Layout.fillWidth: true
-                                    Layout.margins: 14
-                                    spacing: 12
+                                    Layout.margins: Theme.rowPadding
+                                    spacing: Theme.spacingMd
 
-                                    // Device Type Badge
                                     Rectangle {
                                         implicitWidth: typeLbl.implicitWidth + 16
                                         implicitHeight: 26
@@ -438,24 +459,48 @@ Rectangle {
                                         Label {
                                             id: typeLbl
                                             anchors.centerIn: parent
-                                            text: model.deviceType
+                                            text: I18n.t(model.deviceType)
                                             color: Theme.textSecondary
                                             font.pixelSize: 11
                                             font.weight: Font.DemiBold
                                         }
                                     }
 
-                                    // Name, Model & Serial Number
                                     ColumnLayout {
                                         Layout.fillWidth: true
                                         spacing: 2
 
-                                        Label {
+                                        RowLayout {
                                             Layout.fillWidth: true
-                                            text: model.deviceName
-                                            font.pixelSize: 14
-                                            font.weight: Font.DemiBold
-                                            elide: Text.ElideRight
+                                            spacing: 4
+
+                                            Label {
+                                                Layout.maximumWidth: parent.width - 30
+                                                text: model.deviceName
+                                                font.pixelSize: 14
+                                                font.weight: Font.DemiBold
+                                                elide: Text.ElideRight
+                                            }
+
+                                            ToolButton {
+                                                implicitWidth: 24
+                                                implicitHeight: 24
+                                                padding: 0
+                                                text: "✎"
+                                                font.pixelSize: 13
+                                                ToolTip.visible: hovered
+                                                ToolTip.text: I18n.t("Rename device")
+                                                onClicked: {
+                                                    renameDialog.targetSn = model.deviceSn
+                                                    renameDialog.originalName = model.originalName
+                                                    renameNameField.text = model.deviceName
+                                                    renameDialog.open()
+                                                    renameNameField.forceActiveFocus()
+                                                    renameNameField.selectAll()
+                                                }
+                                            }
+
+                                            Item { Layout.fillWidth: true }
                                         }
 
                                         Label {
@@ -473,7 +518,6 @@ Rectangle {
                                         }
                                     }
 
-                                    // Last Seen
                                     Label {
                                         visible: model.lastSeenText !== "—"
                                         text: model.lastSeenText
@@ -481,15 +525,13 @@ Rectangle {
                                         font.pixelSize: 11
                                     }
 
-                                    // Online / Offline Badge
                                     StatusBadge {
                                         status: model.connectionStatus
                                     }
 
-                                    // Inverter Settings Button
                                     Button {
                                         visible: model.deviceType === "Inverter" || model.deviceType === "Microinverter"
-                                        text: "Settings"
+                                        text: I18n.t("Settings")
                                         onClicked: {
                                             appController.openInverterSettings(model.deviceSn, model.deviceName)
                                             inverterSettingsDialog.open()
@@ -508,18 +550,21 @@ Rectangle {
                     }
                 }
 
-                // Section 2: Alerts
+                // ===================== SECTION 2: ALERTS =====================
                 Rectangle {
                     visible: root.currentSection === 2
                     Layout.fillWidth: true
-                    implicitHeight: alertsPlaceholder.implicitHeight + 48
+                    implicitHeight: appController.alertCount > 0
+                                    ? alertsListCol.implicitHeight
+                                    : (alertsEmpty.implicitHeight + 48)
                     radius: Theme.radiusLg
                     color: Theme.bgSurface
                     border.color: Theme.border
                     border.width: 1
 
                     ColumnLayout {
-                        id: alertsPlaceholder
+                        id: alertsEmpty
+                        visible: appController.alertCount === 0
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
@@ -528,23 +573,120 @@ Rectangle {
 
                         Label {
                             Layout.alignment: Qt.AlignHCenter
-                            text: "Alerts"
-                            font.pixelSize: 17
+                            text: I18n.t("No Alerts")
+                            font.pixelSize: 16
                             font.weight: Font.Bold
                         }
                         Label {
                             Layout.alignment: Qt.AlignHCenter
-                            text: "Active warnings and historical fault notifications for this plant will appear here."
+                            text: I18n.t("No active faults or recent warnings were reported for this plant in the last 7 days.")
                             color: Theme.textSecondary
+                        }
+                    }
+
+                    ColumnLayout {
+                        id: alertsListCol
+                        visible: appController.alertCount > 0
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        spacing: 0
+
+                        Repeater {
+                            model: appController.alertModel
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 0
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    Layout.margins: Theme.rowPadding
+                                    spacing: Theme.spacingMd
+
+                                    Rectangle {
+                                        readonly property bool isFault: model.level === "Fault"
+                                        readonly property color pillColor: isFault ? Theme.errorText : Theme.warning
+                                        implicitWidth: codeLbl.implicitWidth + 16
+                                        implicitHeight: 26
+                                        radius: Theme.radiusSm
+                                        color: Qt.rgba(pillColor.r, pillColor.g, pillColor.b, 0.16)
+                                        border.color: Qt.rgba(pillColor.r, pillColor.g, pillColor.b, 0.45)
+                                        border.width: 1
+
+                                        Label {
+                                            id: codeLbl
+                                            anchors.centerIn: parent
+                                            text: model.alertCode.length > 0 ? (I18n.t(model.level) + " • " + model.alertCode) : I18n.t(model.level)
+                                            color: parent.pillColor
+                                            font.pixelSize: 11
+                                            font.weight: Font.Bold
+                                        }
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 2
+
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: model.alertMessage
+                                            font.pixelSize: 14
+                                            font.weight: Font.DemiBold
+                                            wrapMode: Text.WordWrap
+                                        }
+
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: {
+                                                var parts = [];
+                                                if (model.deviceType.length > 0) parts.push(I18n.t(model.deviceType));
+                                                if (model.deviceSn.length > 0) parts.push("SN: " + model.deviceSn);
+                                                parts.push(I18n.t("Started") + ": " + model.startTimeText);
+                                                return parts.join("  •  ");
+                                            }
+                                            color: Theme.textSecondary
+                                            font.pixelSize: 12
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        readonly property color stCol: model.isActive ? Theme.errorText : Theme.success
+                                        implicitWidth: stLbl.implicitWidth + 16
+                                        implicitHeight: 24
+                                        radius: Theme.radiusPill
+                                        color: Qt.rgba(stCol.r, stCol.g, stCol.b, 0.15)
+                                        border.color: Qt.rgba(stCol.r, stCol.g, stCol.b, 0.35)
+                                        border.width: 1
+
+                                        Label {
+                                            id: stLbl
+                                            anchors.centerIn: parent
+                                            text: model.isActive ? I18n.t("Active") : I18n.t("Resolved")
+                                            color: parent.stCol
+                                            font.pixelSize: 11
+                                            font.weight: Font.DemiBold
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    visible: index < appController.alertCount - 1
+                                    Layout.fillWidth: true
+                                    height: 1
+                                    color: Theme.separator
+                                }
+                            }
                         }
                     }
                 }
 
-                // Section 3: Plant Info
+                // ===================== SECTION 3: PLANT INFO =====================
                 Rectangle {
                     visible: root.currentSection === 3
                     Layout.fillWidth: true
-                    implicitHeight: plantInfoCol.implicitHeight + 8
+                    implicitHeight: plantInfoCol.implicitHeight
                     radius: Theme.radiusLg
                     color: Theme.bgSurface
                     border.color: Theme.border
@@ -559,8 +701,8 @@ Rectangle {
 
                         RowLayout {
                             Layout.fillWidth: true
-                            Layout.margins: 14
-                            spacing: 12
+                            Layout.margins: Theme.rowPadding
+                            spacing: Theme.spacingMd
                             Label {
                                 text: label
                                 color: Theme.textSecondary
@@ -590,29 +732,29 @@ Rectangle {
                         spacing: 0
 
                         InfoRow {
-                            label: "Plant Name"
+                            label: I18n.t("Plant Name")
                             value: appController.selectedStationName || "—"
                         }
                         InfoRow {
-                            label: "Plant ID"
+                            label: I18n.t("Plant ID")
                             value: appController.selectedStationId > 0 ? String(appController.selectedStationId) : "—"
                         }
                         InfoRow {
-                            label: "Address"
-                            value: appController.selectedStationLocation || "Not specified"
+                            label: I18n.t("Address")
+                            value: appController.selectedStationLocation || I18n.t("Not specified")
                         }
                         InfoRow {
-                            label: "Installed Capacity"
+                            label: I18n.t("Installed Capacity")
                             value: appController.installedCapacityKw > 0
                                    ? (appController.installedCapacityKw.toFixed(2) + " kWp")
                                    : "—"
                         }
                         InfoRow {
-                            label: "Connection Status"
+                            label: I18n.t("Connection Status")
                             value: appController.connectionStatus
                         }
                         InfoRow {
-                            label: "Last Update"
+                            label: I18n.t("Last Update")
                             value: appController.lastUpdateText
                             showSeparator: false
                         }
@@ -624,5 +766,94 @@ Rectangle {
 
     InverterSettingsDialog {
         id: inverterSettingsDialog
+    }
+
+    Dialog {
+        id: renameDialog
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        width: Math.min(420, Overlay.overlay ? Overlay.overlay.width - 48 : 400)
+        title: I18n.t("Rename Device")
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+        property string targetSn: ""
+        property string originalName: ""
+
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: Theme.spacingMd
+
+            Label {
+                Layout.fillWidth: true
+                text: "SN: " + renameDialog.targetSn + "  •  " + I18n.t("Default") + ": " + renameDialog.originalName
+                color: Theme.textSecondary
+                font.pixelSize: 12
+                elide: Text.ElideRight
+            }
+
+            TextField {
+                id: renameNameField
+                Layout.fillWidth: true
+                placeholderText: renameDialog.originalName
+                onAccepted: {
+                    appController.renameDevice(renameDialog.targetSn, renameNameField.text)
+                    renameDialog.close()
+                }
+            }
+
+            Label {
+                Layout.fillWidth: true
+                text: I18n.t("Saved locally on this computer (does not modify Deye Cloud).")
+                color: Theme.textMuted
+                font.pixelSize: 11
+                wrapMode: Text.WordWrap
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Theme.spacingSm
+
+                Button {
+                    flat: true
+                    text: I18n.t("Reset")
+                    onClicked: {
+                        appController.renameDevice(renameDialog.targetSn, "")
+                        renameDialog.close()
+                    }
+                }
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: I18n.t("Cancel")
+                    onClicked: renameDialog.close()
+                }
+
+                Button {
+                    id: saveRenameBtn
+                    implicitHeight: 34
+                    leftPadding: 16
+                    rightPadding: 16
+                    text: I18n.t("Save")
+                    onClicked: {
+                        appController.renameDevice(renameDialog.targetSn, renameNameField.text)
+                        renameDialog.close()
+                    }
+                    contentItem: Label {
+                        text: saveRenameBtn.text
+                        color: Theme.accentText
+                        font.weight: Font.Bold
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        radius: Theme.radiusSm
+                        color: saveRenameBtn.down ? Qt.darker(Theme.accent, 1.15)
+                             : saveRenameBtn.hovered ? Qt.lighter(Theme.accent, 1.12)
+                             : Theme.accent
+                    }
+                }
+            }
+        }
     }
 }

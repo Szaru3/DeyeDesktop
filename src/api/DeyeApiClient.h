@@ -26,6 +26,9 @@ public:
     void fetchStations(int page = 1, int size = 50);
     void fetchStationLatest(qint64 stationId);
     void fetchStationDevices(qint64 stationId, int page = 1, int size = 50);
+    void fetchStationAlerts(qint64 stationId, qint64 startTimeSec, qint64 endTimeSec, int page = 1, int size = 50);
+    void fetchStationPowerProfile(qint64 stationId, const QString &dateYmd);
+    void fetchStationEnergyHistory(qint64 stationId, const QString &startDateYmd, const QString &endDateYmd, int granularity);
 
     // Inverter Configuration Readers
     void fetchSystemConfig(const QString &deviceSn);
@@ -40,6 +43,9 @@ signals:
     void stationsFetched(const QVector<deye::StationInfo> &stations);
     void stationLatestFetched(qint64 stationId, const deye::StationLatestData &data);
     void stationDevicesFetched(qint64 stationId, const QVector<deye::DeviceInfo> &devices);
+    void stationAlertsFetched(qint64 stationId, const QVector<deye::AlertInfo> &alerts);
+    void stationPowerProfileFetched(qint64 stationId, const QString &dateYmd, const QVector<deye::PowerProfilePoint> &points);
+    void stationEnergyHistoryFetched(qint64 stationId, int granularity, const QVector<deye::EnergyHistoryItem> &items);
     void systemConfigFetched(const QString &deviceSn, const deye::InverterSystemConfig &config);
     void batteryConfigFetched(const QString &deviceSn, const deye::InverterBatteryConfig &config);
     void touConfigFetched(const QString &deviceSn, const deye::InverterTouConfig &config);

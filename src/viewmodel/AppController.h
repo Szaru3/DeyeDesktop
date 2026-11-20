@@ -2,13 +2,17 @@
 
 #include "api/DeyeApiClient.h"
 #include "storage/SettingsStore.h"
+#include "viewmodel/AlertListModel.h"
 #include "viewmodel/DeviceListModel.h"
 #include "viewmodel/InverterSettingsController.h"
 #include "viewmodel/StationListModel.h"
 
+#include <QDate>
 #include <QObject>
+#include <QSet>
 #include <QStringList>
 #include <QTimer>
+#include <QVariantList>
 
 namespace deye {
 
@@ -21,6 +25,7 @@ class AppController : public QObject {
     Q_PROPERTY(bool demoMode READ demoMode NOTIFY sessionChanged)
     Q_PROPERTY(QString errorMessage READ errorMessage NOTIFY errorMessageChanged)
     Q_PROPERTY(QStringList regionNames READ regionNames CONSTANT)
+    Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY languageChanged)
 
     // Saved Login Defaults
     Q_PROPERTY(int savedRegionIndex READ savedRegionIndex CONSTANT)
@@ -36,11 +41,21 @@ class AppController : public QObject {
     Q_PROPERTY(QString savedPassword READ savedPassword CONSTANT)
     Q_PROPERTY(bool savedRememberMe READ savedRememberMe CONSTANT)
 
-    // Stations & Devices
+    // Stations, Devices & Alerts
     Q_PROPERTY(deye::StationListModel *stationModel READ stationModel CONSTANT)
     Q_PROPERTY(deye::DeviceListModel *deviceModel READ deviceModel CONSTANT)
+    Q_PROPERTY(deye::AlertListModel *alertModel READ alertModel CONSTANT)
     Q_PROPERTY(deye::InverterSettingsController *inverterSettings READ inverterSettings CONSTANT)
     Q_PROPERTY(int deviceCount READ deviceCount NOTIFY devicesChanged)
+    Q_PROPERTY(int alertCount READ alertCount NOTIFY alertsChanged)
+    Q_PROPERTY(int activeAlertCount READ activeAlertCount NOTIFY alertsChanged)
+
+    // Charts: Power Profile (Daily) & Generation & Usage History (M/Y/T)
+    Q_PROPERTY(QString powerProfileDateText READ powerProfileDateText NOTIFY powerProfileChanged)
+    Q_PROPERTY(QVariantList powerProfilePoints READ powerProfilePoints NOTIFY powerProfileChanged)
+    Q_PROPERTY(int energyHistoryMode READ energyHistoryMode NOTIFY energyHistoryChanged) // 0=M, 1=Y, 2=T
+    Q_PROPERTY(QString energyHistoryPeriodText READ energyHistoryPeriodText NOTIFY energyHistoryChanged)
+    Q_PROPERTY(QVariantList energyHistoryItems READ energyHistoryItems NOTIFY energyHistoryChanged)
     Q_PROPERTY(int selectedStationIndex READ selectedStationIndex NOTIFY selectedStationChanged)
     Q_PROPERTY(qint64 selectedStationId READ selectedStationId NOTIFY selectedStationChanged)
     Q_PROPERTY(QString selectedStationName READ selectedStationName NOTIFY selectedStationChanged)
@@ -69,6 +84,8 @@ public:
     [[nodiscard]] bool demoMode() const { return m_demoMode; }
     [[nodiscard]] QString errorMessage() const { return m_errorMessage; }
     [[nodiscard]] QStringList regionNames() const { return m_regionNames; }
+    [[nodiscard]] QString language() const { return m_language; }
+    void setLanguage(const QString &lang);
 
     [[nodiscard]] int savedRegionIndex() const { return m_saved.regionIndex; }
     [[nodiscard]] QString savedCustomBaseUrl() const { return m_saved.customBaseUrl; }
@@ -85,8 +102,17 @@ public:
 
     [[nodiscard]] StationListModel *stationModel() { return &m_stationModel; }
     [[nodiscard]] DeviceListModel *deviceModel() { return &m_deviceModel; }
+    [[nodiscard]] AlertListModel *alertModel() { return &m_alertModel; }
     [[nodiscard]] InverterSettingsController *inverterSettings() { return &m_inverterSettings; }
     [[nodiscard]] int deviceCount() const { return m_deviceModel.rowCount(); }
+    [[nodiscard]] int alertCount() const { return m_alertModel.rowCount(); }
+    [[nodiscard]] int activeAlertCount() const { return m_alertModel.activeCount(); }
+
+    [[nodiscard]] QString powerProfileDateText() const { return m_powerProfileDate.toString(QStringLiteral("yyyy/MM/dd")); }
+    [[nodiscard]] QVariantList powerProfilePoints() const { return m_powerProfilePoints; }
+    [[nodiscard]] int energyHistoryMode() const { return m_energyHistoryMode; }
+    [[nodiscard]] QString energyHistoryPeriodText() const;
+    [[nodiscard]] QVariantList energyHistoryItems() const { return m_energyHistoryItems; }
     [[nodiscard]] int selectedStationIndex() const { return m_selectedStationIndex; }
     [[nodiscard]] qint64 selectedStationId() const { return m_selectedStationId; }
     [[nodiscard]] QString selectedStationName() const { return m_selectedStationName; }
@@ -122,6 +148,10 @@ public:
     Q_INVOKABLE void logout();
     Q_INVOKABLE void selectStationByIndex(int index);
     Q_INVOKABLE void openInverterSettings(const QString &deviceSn, const QString &deviceName);
+    Q_INVOKABLE void renameDevice(const QString &deviceSn, const QString &newName);
+    Q_INVOKABLE void shiftPowerProfileDate(int deltaDays);
+    Q_INVOKABLE void setEnergyHistoryMode(int mode);
+    Q_INVOKABLE void shiftEnergyHistoryPeriod(int delta);
     Q_INVOKABLE void refreshStations();
     Q_INVOKABLE void refreshDashboard();
     Q_INVOKABLE void clearError();
@@ -131,8 +161,12 @@ signals:
     void sessionChanged();
     void busyChanged();
     void errorMessageChanged();
+    void languageChanged();
     void selectedStationChanged();
     void devicesChanged();
+    void alertsChanged();
+    void powerProfileChanged();
+    void energyHistoryChanged();
     void telemetryChanged();
     void refreshSettingsChanged();
 
@@ -142,19 +176,37 @@ private:
     void updateTimerState();
     void applyDemoTelemetry(qint64 stationId);
     void applyDemoDevices(qint64 stationId);
+    void applyDemoAlerts(qint64 stationId);
+    void applyDemoPowerProfile(qint64 stationId);
+    void applyDemoEnergyHistory(qint64 stationId);
+    void fetchPowerProfile();
+    void fetchEnergyHistory();
+    void notifyNewFaults(const QVector<AlertInfo> &alerts);
+    void sendDesktopNotification(const QString &title, const QString &body, bool isCritical);
     void applyTelemetry(const StationLatestData &data);
     void onAuthenticated(const DeyeAuthResult &result);
     void onStationsFetched(const QVector<StationInfo> &stations);
     void onStationLatestFetched(qint64 stationId, const StationLatestData &data);
     void onStationDevicesFetched(qint64 stationId, const QVector<DeviceInfo> &devices);
+    void onStationAlertsFetched(qint64 stationId, const QVector<AlertInfo> &alerts);
+    void onStationPowerProfileFetched(qint64 stationId, const QString &dateYmd, const QVector<PowerProfilePoint> &points);
+    void onStationEnergyHistoryFetched(qint64 stationId, int granularity, const QVector<EnergyHistoryItem> &items);
     void onRequestFailed(const QString &context, const QString &message, bool authExpired);
 
     DeyeApiClient m_apiClient;
     SettingsStore m_settingsStore;
     StationListModel m_stationModel;
     DeviceListModel m_deviceModel;
+    AlertListModel m_alertModel;
     InverterSettingsController m_inverterSettings;
+    QSet<QString> m_notifiedAlertIds;
     QTimer m_refreshTimer;
+
+    QDate m_powerProfileDate = QDate::currentDate();
+    QVariantList m_powerProfilePoints;
+    int m_energyHistoryMode = 0; // 0=M (granularity 2), 1=Y (granularity 3), 2=T (granularity 4)
+    QDate m_energyHistoryDate = QDate::currentDate();
+    QVariantList m_energyHistoryItems;
 
     QVector<DeyeRegion> m_regions;
     QStringList m_regionNames;
@@ -164,6 +216,7 @@ private:
     bool m_busy = false;
     bool m_demoMode = false;
     QString m_errorMessage;
+    QString m_language = QStringLiteral("en");
 
     int m_selectedStationIndex = -1;
     qint64 m_selectedStationId = 0;

@@ -9,7 +9,6 @@ Rectangle {
 
     property bool showAppSecret: false
     property bool showPassword: false
-    // Auto-collapse Developer API Settings once App ID & App Secret are saved
     property bool devSectionExpanded: appController.savedAppId.length === 0 || appController.savedAppSecret.length === 0
 
     function submitLogin() {
@@ -45,22 +44,47 @@ Rectangle {
         font.weight: Font.Medium
     }
 
+    // Top-right persistent Language Selector
+    RowLayout {
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.margins: Theme.pageMargin
+        spacing: Theme.spacingSm
+        z: 5
+
+        Label {
+            text: I18n.t("Language")
+            color: Theme.textSecondary
+            font.pixelSize: 12
+        }
+
+        ComboBox {
+            id: langCombo
+            implicitWidth: 118
+            model: ["English", "Polski"]
+            currentIndex: appController.language === "pl" ? 1 : 0
+            onActivated: function(idx) {
+                appController.language = (idx === 1) ? "pl" : "en"
+            }
+        }
+    }
+
     Flickable {
         anchors.fill: parent
         contentWidth: width
-        contentHeight: Math.max(height, clampContainer.implicitHeight + 56)
+        contentHeight: Math.max(height, clampContainer.implicitHeight + 96)
         clip: true
 
         ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
-        // AdwClamp-style centered column with native KDE controls
+        // Centered clamped login column with uniform padding
         ColumnLayout {
             id: clampContainer
             width: Math.min(440, parent.width - 40)
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
-            anchors.topMargin: Math.max(28, (parent.height - implicitHeight) / 2)
-            spacing: 16
+            anchors.topMargin: Math.max(56, (parent.height - implicitHeight) / 2)
+            spacing: Theme.spacingLg
 
             // App Header
             ColumnLayout {
@@ -94,7 +118,7 @@ Rectangle {
                 Label {
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
-                    text: "Sign in to your Deye Cloud account"
+                    text: I18n.t("Sign in to your Deye Cloud account")
                     color: Theme.textSecondary
                     wrapMode: Text.WordWrap
                 }
@@ -104,7 +128,7 @@ Rectangle {
             Rectangle {
                 visible: appController.errorMessage.length > 0
                 Layout.fillWidth: true
-                implicitHeight: errText.implicitHeight + 20
+                implicitHeight: errText.implicitHeight + 24
                 radius: Theme.radiusMd
                 color: Theme.errorSoft
                 border.color: Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.55)
@@ -113,7 +137,7 @@ Rectangle {
                 Label {
                     id: errText
                     anchors.fill: parent
-                    anchors.margins: 10
+                    anchors.margins: 12
                     text: appController.errorMessage
                     color: Theme.errorText
                     font.pixelSize: 12
@@ -121,16 +145,16 @@ Rectangle {
                 }
             }
 
-            // Group 1: Account (Email + Password + Remember checkbox)
+            // Group 1: Account
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 6
 
-                GroupTitle { text: "Account" }
+                GroupTitle { text: I18n.t("Account") }
 
                 Rectangle {
                     Layout.fillWidth: true
-                    implicitHeight: accGroupCol.implicitHeight + 28
+                    implicitHeight: accGroupCol.implicitHeight + Theme.cardPadding * 2
                     radius: Theme.radiusLg
                     color: Theme.bgSurface
                     border.color: Theme.border
@@ -141,13 +165,13 @@ Rectangle {
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.top: parent.top
-                        anchors.margins: 14
-                        spacing: 10
+                        anchors.margins: Theme.cardPadding
+                        spacing: Theme.spacingMd
 
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: 4
-                            FieldLabel { text: "Email Address" }
+                            FieldLabel { text: I18n.t("Email Address") }
                             TextField {
                                 id: emailField
                                 Layout.fillWidth: true
@@ -160,7 +184,7 @@ Rectangle {
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: 4
-                            FieldLabel { text: "Password" }
+                            FieldLabel { text: I18n.t("Password") }
                             RowLayout {
                                 Layout.fillWidth: true
                                 spacing: 6
@@ -168,12 +192,12 @@ Rectangle {
                                     id: passwordField
                                     Layout.fillWidth: true
                                     text: appController.savedPassword
-                                    placeholderText: "Account password"
+                                    placeholderText: I18n.t("Account password")
                                     echoMode: root.showPassword ? TextInput.Normal : TextInput.Password
                                     onAccepted: root.submitLogin()
                                 }
                                 Button {
-                                    text: root.showPassword ? "Hide" : "Show"
+                                    text: root.showPassword ? I18n.t("Hide") : I18n.t("Show")
                                     onClicked: root.showPassword = !root.showPassword
                                 }
                             }
@@ -189,7 +213,7 @@ Rectangle {
                             id: rememberCheck
                             Layout.fillWidth: true
                             checked: appController.savedRememberMe
-                            text: "Remember credentials on this computer"
+                            text: I18n.t("Remember credentials on this computer")
                         }
                     }
                 }
@@ -214,29 +238,29 @@ Rectangle {
 
                     Rectangle {
                         Layout.fillWidth: true
-                        implicitHeight: 50
+                        implicitHeight: 52
                         color: headerHover.containsMouse ? Theme.bgElevated : "transparent"
                         radius: Theme.radiusLg
 
                         RowLayout {
                             anchors.fill: parent
-                            anchors.leftMargin: 14
-                            anchors.rightMargin: 14
+                            anchors.leftMargin: Theme.cardPadding
+                            anchors.rightMargin: Theme.cardPadding
                             spacing: 10
 
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                spacing: 1
+                                spacing: 2
 
                                 Label {
-                                    text: "Developer API Settings"
+                                    text: I18n.t("Developer API Settings")
                                     font.weight: Font.DemiBold
                                 }
 
                                 Label {
                                     text: (appIdField.text.trim().length > 0 && appSecretField.text.trim().length > 0)
-                                          ? (regionCombo.displayText + " • Configured")
-                                          : "Region, App ID & App Secret"
+                                          ? (regionCombo.displayText + " • " + I18n.t("Configured"))
+                                          : I18n.t("Region, App ID & App Secret")
                                     color: Theme.textMuted
                                     font.pixelSize: 11
                                     elide: Text.ElideRight
@@ -273,13 +297,13 @@ Rectangle {
 
                         ColumnLayout {
                             Layout.fillWidth: true
-                            Layout.margins: 14
-                            spacing: 10
+                            Layout.margins: Theme.cardPadding
+                            spacing: Theme.spacingMd
 
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 4
-                                FieldLabel { text: "Cloud Region" }
+                                FieldLabel { text: I18n.t("Cloud Region") }
 
                                 ComboBox {
                                     id: regionCombo
@@ -328,7 +352,7 @@ Rectangle {
                                             echoMode: root.showAppSecret ? TextInput.Normal : TextInput.Password
                                         }
                                         Button {
-                                            text: root.showAppSecret ? "Hide" : "Show"
+                                            text: root.showAppSecret ? I18n.t("Hide") : I18n.t("Show")
                                             onClicked: root.showAppSecret = !root.showAppSecret
                                         }
                                     }
@@ -338,12 +362,12 @@ Rectangle {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 4
-                                FieldLabel { text: "Company ID (optional)" }
+                                FieldLabel { text: I18n.t("Company ID (optional)") }
                                 TextField {
                                     id: companyIdField
                                     Layout.fillWidth: true
                                     text: appController.savedCompanyId
-                                    placeholderText: "Leave empty for personal accounts"
+                                    placeholderText: I18n.t("Leave empty for personal accounts")
                                     onAccepted: root.submitLogin()
                                 }
                             }
@@ -352,17 +376,17 @@ Rectangle {
                 }
             }
 
-            // Action Buttons (native KDE buttons)
+            // Action Buttons
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 8
+                spacing: Theme.spacingSm
 
                 Button {
                     id: signInButton
                     Layout.fillWidth: true
                     implicitHeight: 38
                     enabled: !appController.busy
-                    text: appController.busy ? "Signing in..." : "Sign In"
+                    text: appController.busy ? I18n.t("Signing in...") : I18n.t("Sign In")
                     onClicked: root.submitLogin()
 
                     contentItem: Label {
@@ -387,9 +411,10 @@ Rectangle {
 
                 Button {
                     Layout.fillWidth: true
+                    implicitHeight: 34
                     flat: true
                     enabled: !appController.busy
-                    text: "Preview Demo Mode"
+                    text: I18n.t("Preview Demo Mode")
                     onClicked: appController.loginDemo()
                 }
             }

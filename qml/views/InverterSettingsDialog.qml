@@ -57,7 +57,7 @@ Dialog {
                 Layout.fillWidth: true
                 spacing: 2
                 Label {
-                    text: label
+                    text: I18n.t(label)
                     font.weight: Font.Medium
                 }
                 Label {
@@ -119,27 +119,27 @@ Dialog {
                         Layout.fillWidth: true
                         spacing: 1
                         Label {
-                            text: (ctrl.deviceName || "Inverter") + " Settings"
+                            text: (ctrl.deviceName || I18n.t("Inverter")) + " — " + I18n.t("Settings")
                             font.pixelSize: 15
                             font.weight: Font.Bold
                             elide: Text.ElideRight
                             Layout.fillWidth: true
                         }
                         Label {
-                            text: "SN: " + ctrl.deviceSn + (ctrl.loading ? "  •  Loading current config…" : "")
+                            text: "SN: " + ctrl.deviceSn + (ctrl.loading ? ("  •  " + I18n.t("Loading current config…")) : "")
                             color: Theme.textSecondary
                             font.pixelSize: 11
                         }
                     }
 
                     Button {
-                        text: "Reload"
+                        text: I18n.t("Reload")
                         enabled: !ctrl.loading && !ctrl.saving
                         onClicked: ctrl.reload()
                     }
 
                     Button {
-                        text: "Close"
+                        text: I18n.t("Close")
                         onClicked: dialog.close()
                     }
                 }
@@ -150,10 +150,10 @@ Dialog {
                 id: tabBar
                 Layout.fillWidth: true
 
-                TabButton { text: "System" }
-                TabButton { text: "Battery" }
-                TabButton { text: "Time of Use" }
-                TabButton { text: "Advanced" }
+                TabButton { text: I18n.t("System") }
+                TabButton { text: I18n.t("Battery") }
+                TabButton { text: I18n.t("Time of Use") }
+                TabButton { text: I18n.t("Advanced") }
             }
 
             // Status / Order Feedback Banner
@@ -185,7 +185,7 @@ Dialog {
 
                     Button {
                         flat: true
-                        text: "Dismiss"
+                        text: I18n.t("Dismiss")
                         onClicked: ctrl.clearStatus()
                     }
                 }
@@ -249,7 +249,7 @@ Dialog {
                                         currentIndex: dialog.indexOfOrZero(dialog.workModeValues, ctrl.workMode)
                                     }
                                     Button {
-                                        text: "Apply"
+                                        text: I18n.t("Apply")
                                         enabled: !ctrl.saving
                                         onClicked: ctrl.updateWorkMode(dialog.workModeValues[workModeCombo.currentIndex])
                                     }
@@ -265,7 +265,7 @@ Dialog {
                                         currentIndex: dialog.indexOfOrZero(dialog.energyPatternValues, ctrl.energyPattern)
                                     }
                                     Button {
-                                        text: "Apply"
+                                        text: I18n.t("Apply")
                                         enabled: !ctrl.saving
                                         onClicked: ctrl.updateEnergyPattern(dialog.energyPatternValues[energyPatternCombo.currentIndex])
                                     }
@@ -280,7 +280,7 @@ Dialog {
                                         text: checked ? "Enabled" : "Disabled"
                                     }
                                     Button {
-                                        text: "Apply"
+                                        text: I18n.t("Apply")
                                         enabled: !ctrl.saving
                                         onClicked: ctrl.setSolarSell(solarSellCheck.checked)
                                     }
@@ -296,7 +296,7 @@ Dialog {
                                         currentIndex: dialog.indexOfOrZero(dialog.limitControlValues, ctrl.limitControl)
                                     }
                                     Button {
-                                        text: "Apply"
+                                        text: I18n.t("Apply")
                                         enabled: !ctrl.saving
                                         onClicked: ctrl.updateLimitControl(dialog.limitControlValues[limitControlCombo.currentIndex])
                                     }
@@ -312,7 +312,7 @@ Dialog {
                                         value: ctrl.maxSellPower
                                     }
                                     Button {
-                                        text: "Apply"
+                                        text: I18n.t("Apply")
                                         enabled: !ctrl.saving
                                         onClicked: ctrl.updatePowerLimit("MAX_SELL_POWER", maxSellSpin.value)
                                     }
@@ -328,7 +328,7 @@ Dialog {
                                         value: ctrl.maxSolarPower
                                     }
                                     Button {
-                                        text: "Apply"
+                                        text: I18n.t("Apply")
                                         enabled: !ctrl.saving
                                         onClicked: ctrl.updatePowerLimit("MAX_SOLAR_POWER", maxSolarSpin.value)
                                     }
@@ -350,7 +350,7 @@ Dialog {
                                         value: ctrl.gridPeakShavingPower
                                     }
                                     Button {
-                                        text: "Apply"
+                                        text: I18n.t("Apply")
                                         enabled: !ctrl.saving
                                         onClicked: ctrl.updateGridPeakShaving(peakShavingCheck.checked, peakShavingSpin.value)
                                     }
@@ -413,7 +413,7 @@ Dialog {
                                         currentIndex: dialog.indexOfOrZero(dialog.batteryTypeValues, ctrl.batteryType)
                                     }
                                     Button {
-                                        text: "Apply"
+                                        text: I18n.t("Apply")
                                         enabled: !ctrl.saving
                                         onClicked: ctrl.updateBatteryType(dialog.batteryTypeValues[battTypeCombo.currentIndex])
                                     }
@@ -428,7 +428,7 @@ Dialog {
                                         text: checked ? "Enabled" : "Disabled"
                                     }
                                     Button {
-                                        text: "Apply"
+                                        text: I18n.t("Apply")
                                         enabled: !ctrl.saving
                                         onClicked: ctrl.setBatteryModeControl("GRID_CHARGE", gridChargeCheck.checked)
                                     }
@@ -444,7 +444,7 @@ Dialog {
                                         text: checked ? "Enabled" : "Disabled"
                                     }
                                     Button {
-                                        text: "Apply"
+                                        text: I18n.t("Apply")
                                         enabled: !ctrl.saving
                                         onClicked: ctrl.setBatteryModeControl("GEN_CHARGE", genChargeCheck.checked)
                                     }
@@ -464,68 +464,68 @@ Dialog {
                                 SettingRow {
                                     label: "Max Charge Current (A)"
                                     SpinBox { id: maxChgA; from: 0; to: 300; editable: true; value: ctrl.maxChargeCurrent }
-                                    Button { text: "Apply"; enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("MAX_CHARGE_CURRENT", maxChgA.value) }
+                                    Button { text: I18n.t("Apply"); enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("MAX_CHARGE_CURRENT", maxChgA.value) }
                                 }
                                 SettingRow {
                                     label: "Max Discharge Current (A)"
                                     SpinBox { id: maxDisA; from: 0; to: 300; editable: true; value: ctrl.maxDischargeCurrent }
-                                    Button { text: "Apply"; enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("MAX_DISCHARGE_CURRENT", maxDisA.value) }
+                                    Button { text: I18n.t("Apply"); enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("MAX_DISCHARGE_CURRENT", maxDisA.value) }
                                 }
                                 SettingRow {
                                     label: "Grid Charge Current (A)"
                                     SpinBox { id: gridChgA; from: 0; to: 300; editable: true; value: ctrl.gridChargeAmpere }
-                                    Button { text: "Apply"; enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("GRID_CHARGE_AMPERE", gridChgA.value) }
+                                    Button { text: I18n.t("Apply"); enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("GRID_CHARGE_AMPERE", gridChgA.value) }
                                 }
                                 SettingRow {
                                     label: "Generator Charge Current (A)"
                                     SpinBox { id: genChgA; from: 0; to: 300; editable: true; value: ctrl.genChargeAmpere }
-                                    Button { text: "Apply"; enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("GEN_CHARGE_AMPERE", genChgA.value) }
+                                    Button { text: I18n.t("Apply"); enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("GEN_CHARGE_AMPERE", genChgA.value) }
                                 }
                                 SettingRow {
                                     label: "Battery Capacity (Ah)"
                                     SpinBox { id: battCapAh; from: 10; to: 2000; stepSize: 10; editable: true; value: ctrl.batteryCapacityAh }
-                                    Button { text: "Apply"; enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("BATT_CAPACITY", battCapAh.value) }
+                                    Button { text: I18n.t("Apply"); enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("BATT_CAPACITY", battCapAh.value) }
                                 }
                                 SettingRow {
                                     label: "Shutdown SOC (%)"
                                     SpinBox { id: shutSoc; from: 0; to: 100; editable: true; value: ctrl.shutdownSoc }
-                                    Button { text: "Apply"; enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("SHUTDOWN_SOC", shutSoc.value) }
+                                    Button { text: I18n.t("Apply"); enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("SHUTDOWN_SOC", shutSoc.value) }
                                 }
                                 SettingRow {
                                     label: "Low Battery SOC (%)"
                                     SpinBox { id: lowSoc; from: 0; to: 100; editable: true; value: ctrl.lowBattSoc }
-                                    Button { text: "Apply"; enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("LOW_BATT_SOC", lowSoc.value) }
+                                    Button { text: I18n.t("Apply"); enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("LOW_BATT_SOC", lowSoc.value) }
                                 }
                                 SettingRow {
                                     label: "Restart SOC (%)"
                                     SpinBox { id: restartSocSpin; from: 0; to: 100; editable: true; value: ctrl.restartSoc }
-                                    Button { text: "Apply"; enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("RESTART_SOC", restartSocSpin.value) }
+                                    Button { text: I18n.t("Apply"); enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("RESTART_SOC", restartSocSpin.value) }
                                 }
                                 SettingRow {
                                     label: "Grid Charge Start SOC (%)"
                                     SpinBox { id: gridStartSoc; from: 0; to: 100; editable: true; value: ctrl.gridChargeStartSoc }
-                                    Button { text: "Apply"; enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("GRID_CHARGE_START_SOC", gridStartSoc.value) }
+                                    Button { text: I18n.t("Apply"); enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("GRID_CHARGE_START_SOC", gridStartSoc.value) }
                                 }
                                 SettingRow {
                                     label: "Generator Charge Start SOC (%)"
                                     SpinBox { id: genStartSoc; from: 0; to: 100; editable: true; value: ctrl.genChargeStartSoc }
-                                    Button { text: "Apply"; enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("GEN_CHARGE_START_SOC", genStartSoc.value) }
+                                    Button { text: I18n.t("Apply"); enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("GEN_CHARGE_START_SOC", genStartSoc.value) }
                                 }
                                 SettingRow {
                                     label: "Equalization Voltage (V)"
                                     TextField { id: eqVField; implicitWidth: 88; text: ctrl.equalizationV.toFixed(1) }
-                                    Button { text: "Apply"; enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("EQUALIZATION_V", parseFloat(eqVField.text) || 0) }
+                                    Button { text: I18n.t("Apply"); enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("EQUALIZATION_V", parseFloat(eqVField.text) || 0) }
                                 }
                                 SettingRow {
                                     label: "Absorption Voltage (V)"
                                     TextField { id: absVField; implicitWidth: 88; text: ctrl.absorptionV.toFixed(1) }
-                                    Button { text: "Apply"; enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("ABSORPTION_V", parseFloat(absVField.text) || 0) }
+                                    Button { text: I18n.t("Apply"); enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("ABSORPTION_V", parseFloat(absVField.text) || 0) }
                                 }
                                 SettingRow {
                                     label: "Float Voltage (V)"
                                     showSeparator: false
                                     TextField { id: fltVField; implicitWidth: 88; text: ctrl.floatV.toFixed(1) }
-                                    Button { text: "Apply"; enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("FLOAT_V", parseFloat(fltVField.text) || 0) }
+                                    Button { text: I18n.t("Apply"); enabled: !ctrl.saving; onClicked: ctrl.updateBatteryParameter("FLOAT_V", parseFloat(fltVField.text) || 0) }
                                 }
                             }
                         }
@@ -584,7 +584,7 @@ Dialog {
                                         text: checked ? "Enabled" : "Disabled"
                                     }
                                     Button {
-                                        text: "Apply"
+                                        text: I18n.t("Apply")
                                         enabled: !ctrl.saving
                                         onClicked: ctrl.setTouEnabled(touEnableCheck.checked)
                                     }
@@ -692,7 +692,7 @@ Dialog {
                                 implicitHeight: 36
                                 leftPadding: 18
                                 rightPadding: 18
-                                text: "Apply Time of Use Schedule"
+                                text: I18n.t("Apply Time of Use Schedule")
                                 enabled: !ctrl.saving
                                 onClicked: ctrl.applyTouSchedule()
                                 contentItem: Label {
@@ -740,7 +740,7 @@ Dialog {
                                 spacing: 10
 
                                 Label {
-                                    text: "Custom Modbus / Control Command"
+                                    text: I18n.t("Custom Modbus / Control Command")
                                     font.weight: Font.Bold
                                 }
                                 Label {
@@ -759,7 +759,7 @@ Dialog {
                                     Layout.fillWidth: true
                                     Item { Layout.fillWidth: true }
                                     Button {
-                                        text: "Send Custom Command"
+                                        text: I18n.t("Send Custom Command")
                                         enabled: !ctrl.saving && customHexField.text.trim().length > 0
                                         onClicked: ctrl.sendCustomControl(customHexField.text)
                                     }

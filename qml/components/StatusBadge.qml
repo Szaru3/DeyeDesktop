@@ -15,10 +15,10 @@ Rectangle {
                                       : isOffline ? Theme.errorText
                                       : Theme.textMuted
 
-    readonly property string labelText: isOnline ? "Online"
-                                      : isPartial ? "Partial"
-                                      : isOffline ? "Offline"
-                                      : "Unknown"
+    readonly property string labelText: isOnline ? I18n.t("Online")
+                                      : isPartial ? I18n.t("Partial")
+                                      : isOffline ? I18n.t("Offline")
+                                      : I18n.t("Unknown")
 
     implicitWidth: row.implicitWidth + 16
     implicitHeight: 24

@@ -31,6 +31,8 @@ SavedSettings SettingsStore::load() const
     s.lastStationId = m_settings.value(QStringLiteral("dashboard/lastStationId"), 0).toLongLong();
     s.refreshIntervalSec = 120;
     s.autoRefreshEnabled = true;
+    const QString lang = m_settings.value(QStringLiteral("app/language"), QStringLiteral("en")).toString().trimmed().toLower();
+    s.language = (lang == QStringLiteral("pl")) ? QStringLiteral("pl") : QStringLiteral("en");
     return s;
 }
 
@@ -67,6 +69,48 @@ void SettingsStore::saveRefreshSettings(bool autoRefreshEnabled, int intervalSec
 {
     m_settings.setValue(QStringLiteral("dashboard/autoRefreshEnabled"), autoRefreshEnabled);
     m_settings.setValue(QStringLiteral("dashboard/refreshIntervalSec"), std::clamp(intervalSec, 15, 3600));
+    m_settings.sync();
+}
+
+void SettingsStore::saveLanguage(const QString &lang)
+{
+    const QString normalized = (lang.trimmed().toLower() == QStringLiteral("pl"))
+        ? QStringLiteral("pl")
+        : QStringLiteral("en");
+    m_settings.setValue(QStringLiteral("app/language"), normalized);
+    m_settings.sync();
+}
+
+QMap<QString, QString> SettingsStore::loadCustomDeviceNames() const
+{
+    QMap<QString, QString> names;
+    QSettings reader(QStringLiteral("DeyeDesktop"), QStringLiteral("DeyeDesktop"));
+    reader.beginGroup(QStringLiteral("deviceNames"));
+    const QStringList keys = reader.childKeys();
+    for (const QString &key : keys) {
+        const QString val = reader.value(key).toString().trimmed();
+        if (!val.isEmpty()) {
+            names.insert(key, val);
+        }
+    }
+    reader.endGroup();
+    return names;
+}
+
+void SettingsStore::saveCustomDeviceName(const QString &deviceSn, const QString &customName)
+{
+    const QString key = deviceSn.trimmed();
+    if (key.isEmpty()) {
+        return;
+    }
+    m_settings.beginGroup(QStringLiteral("deviceNames"));
+    const QString trimmed = customName.trimmed();
+    if (trimmed.isEmpty()) {
+        m_settings.remove(key);
+    } else {
+        m_settings.setValue(key, trimmed);
+    }
+    m_settings.endGroup();
     m_settings.sync();
 }
 

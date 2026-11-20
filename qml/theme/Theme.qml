@@ -42,12 +42,15 @@ QtObject {
     readonly property color load: isDark ? "#C061CB" : "#813D9C"
     readonly property color loadSoft: Qt.rgba(load.r, load.g, load.b, isDark ? 0.16 : 0.12)
 
-    // Spacing & Radii
+    // Spacing & Radii (consistent across all cards & sections)
     readonly property int radiusSm: 6
     readonly property int radiusMd: 9
     readonly property int radiusLg: 12
     readonly property int radiusPill: 999
-    readonly property int spacingSm: 6
+    readonly property int spacingSm: 8
     readonly property int spacingMd: 12
-    readonly property int spacingLg: 18
+    readonly property int spacingLg: 16
+    readonly property int cardPadding: 16
+    readonly property int rowPadding: 14
+    readonly property int pageMargin: 20
 }

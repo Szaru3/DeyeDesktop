@@ -1,4 +1,5 @@
 #include "api/DeyeModels.h"
+#include "viewmodel/DeviceListModel.h"
 
 #include <QJsonDocument>
 #include <QtTest>
@@ -301,7 +302,119 @@ private slots:
         QVERIFY(ord.success);
         QCOMPARE(ord.orderId, QStringLiteral("ord_9981"));
     }
+
+    void sortDeviceListModel()
+    {
+        DeviceListModel model;
+        QVector<DeviceInfo> unsorted = {
+            {1, QStringLiteral("4200"), QStringLiteral("Logger B"), QStringLiteral("Data Logger"), {}, QStringLiteral("NORMAL"), 0},
+            {2, QStringLiteral("B200"), QStringLiteral("Battery B"), QStringLiteral("Battery"), {}, QStringLiteral("NORMAL"), 0},
+            {3, QStringLiteral("2300"), QStringLiteral("Inverter B"), QStringLiteral("Inverter"), {}, QStringLiteral("NORMAL"), 0},
+            {4, QStringLiteral("4100"), QStringLiteral("Logger A"), QStringLiteral("Data Logger"), {}, QStringLiteral("NORMAL"), 0},
+            {5, QStringLiteral("2100"), QStringLiteral("Inverter A"), QStringLiteral("Inverter"), {}, QStringLiteral("NORMAL"), 0},
+            {6, QStringLiteral("B100"), QStringLiteral("Battery A"), QStringLiteral("Battery"), {}, QStringLiteral("NORMAL"), 0},
+            {7, QStringLiteral("9000"), QStringLiteral("Meter"), QStringLiteral("Smart Meter"), {}, QStringLiteral("NORMAL"), 0}
+        };
+
+        model.setDevices(unsorted);
+        QCOMPARE(model.rowCount(), 7);
+        QCOMPARE(model.data(model.index(0), DeviceListModel::DeviceSnRole).toString(), QStringLiteral("2100"));
+        QCOMPARE(model.data(model.index(1), DeviceListModel::DeviceSnRole).toString(), QStringLiteral("2300"));
+        QCOMPARE(model.data(model.index(2), DeviceListModel::DeviceSnRole).toString(), QStringLiteral("B100"));
+        QCOMPARE(model.data(model.index(3), DeviceListModel::DeviceSnRole).toString(), QStringLiteral("B200"));
+        QCOMPARE(model.data(model.index(4), DeviceListModel::DeviceSnRole).toString(), QStringLiteral("4100"));
+        QCOMPARE(model.data(model.index(5), DeviceListModel::DeviceSnRole).toString(), QStringLiteral("4200"));
+        QCOMPARE(model.data(model.index(6), DeviceListModel::DeviceSnRole).toString(), QStringLiteral("9000"));
+
+        // Local custom rename & reset
+        model.setCustomNameForDevice(QStringLiteral("2100"), QStringLiteral("Garage Inverter"));
+        QCOMPARE(model.data(model.index(0), DeviceListModel::DeviceNameRole).toString(), QStringLiteral("Garage Inverter"));
+        QCOMPARE(model.data(model.index(0), DeviceListModel::OriginalNameRole).toString(), QStringLiteral("Inverter A"));
+
+        model.setCustomNameForDevice(QStringLiteral("2100"), QString());
+        QCOMPARE(model.data(model.index(0), DeviceListModel::DeviceNameRole).toString(), QStringLiteral("Inverter A"));
+    }
+
+    void parseAlertsAndHistory()
+    {
+        const QByteArray alertJson = R"({
+            "code": "1000000",
+            "success": true,
+            "data": {
+                "total": 1,
+                "alertList": [
+                    {
+                        "alertId": "a1",
+                        "deviceSn": "2304240345",
+                        "deviceType": "INVERTER",
+                        "alertCode": "F56",
+                        "alertMessage": "DC Busbar Voltage Low",
+                        "level": "Fault",
+                        "status": 0,
+                        "startTime": 1719225600
+                    }
+                ]
+            }
+        })";
+        const auto alerts = AlertListResult::fromJson(QJsonDocument::fromJson(alertJson).object());
+        QVERIFY(alerts.success);
+        QCOMPARE(alerts.alerts.size(), 1);
+        QCOMPARE(alerts.alerts[0].alertCode, QStringLiteral("F56"));
+        QCOMPARE(alerts.alerts[0].level, QStringLiteral("Fault"));
+        QVERIFY(alerts.alerts[0].isActive);
+
+        const QByteArray profileJson = R"({
+            "code": "1000000",
+            "success": true,
+            "stationDataItems": [
+                {
+                    "timeStamp": 1795215600.0,
+                    "generationPower": null,
+                    "consumptionPower": null,
+                    "batterySOC": null
+                },
+                {
+                    "timeStamp": 1795215900.0,
+                    "generationPower": 4500.0,
+                    "consumptionPower": 1200.0,
+                    "wirePower": -300.0,
+                    "chargePower": -3000.0,
+                    "batterySOC": 75.0
+                }
+            ]
+        })";
+        const auto prof = PowerProfileResult::fromJson(QJsonDocument::fromJson(profileJson).object());
+        QVERIFY(prof.success);
+        QCOMPARE(prof.points.size(), 1);
+        QVERIFY(!prof.points[0].timeLabel.isEmpty());
+        QCOMPARE(prof.points[0].pvKw, 4.5);
+        QCOMPARE(prof.points[0].consumptionKw, 1.2);
+        QCOMPARE(prof.points[0].batteryKw, -3.0);
+        QCOMPARE(prof.points[0].soc, 75.0);
+
+        const QByteArray histJson = R"({
+            "code": "1000000",
+            "success": true,
+            "stationDataItems": [
+                {
+                    "time": "2026-11-15",
+                    "generationValue": 28.4,
+                    "dischargeValue": 8.2,
+                    "purchaseValue": 12.0,
+                    "consumptionValue": 31.5,
+                    "chargeValue": 10.1,
+                    "gridValue": 4.5
+                }
+            ]
+        })";
+        const auto hist = EnergyHistoryResult::fromJson(QJsonDocument::fromJson(histJson).object(), 2);
+        QVERIFY(hist.success);
+        QCOMPARE(hist.items.size(), 1);
+        QCOMPARE(hist.items[0].label, QStringLiteral("15"));
+        QCOMPARE(hist.items[0].productionKwh, 28.4);
+        QCOMPARE(hist.items[0].consumptionKwh, 31.5);
+    }
 };
 
-QTEST_MAIN(TestDeyeModels)
+QTEST_GUILESS_MAIN(TestDeyeModels)
 #include "test_deye_models.moc"

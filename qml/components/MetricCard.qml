@@ -21,8 +21,8 @@ Rectangle {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 16
-        spacing: 8
+        anchors.margins: Theme.cardPadding
+        spacing: Theme.spacingSm
 
         RowLayout {
             Layout.fillWidth: true

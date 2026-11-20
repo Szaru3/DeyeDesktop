@@ -1,5 +1,7 @@
 #include "DeyeApiClient.h"
 
+#include <QDate>
+#include <QDebug>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonParseError>
@@ -259,6 +261,102 @@ void DeyeApiClient::fetchStationDevices(qint64 stationId, int page, int size)
         }
 
         emit stationDevicesFetched(stationId, result.devices);
+    });
+}
+
+void DeyeApiClient::fetchStationAlerts(qint64 stationId, qint64 startTimeSec, qint64 endTimeSec, int page, int size)
+{
+    if (m_baseUrl.isEmpty() || m_accessToken.isEmpty()) {
+        return;
+    }
+
+    const QUrl url(m_baseUrl + QStringLiteral("/v1.0/station/alertList"));
+    QJsonObject bodyObj;
+    bodyObj.insert(QStringLiteral("stationId"), stationId);
+    bodyObj.insert(QStringLiteral("startTime"), startTimeSec);
+    bodyObj.insert(QStringLiteral("endTime"), endTimeSec);
+    bodyObj.insert(QStringLiteral("page"), page);
+    bodyObj.insert(QStringLiteral("size"), size);
+
+    QNetworkReply *reply = m_network.post(buildRequest(url, true), QJsonDocument(bodyObj).toJson(QJsonDocument::Compact));
+    connect(reply, &QNetworkReply::finished, this, [this, reply, stationId]() {
+        reply->deleteLater();
+        QJsonParseError parseErr{};
+        const QJsonDocument doc = QJsonDocument::fromJson(reply->readAll(), &parseErr);
+        if (parseErr.error != QJsonParseError::NoError || !doc.isObject()) {
+            return;
+        }
+        const AlertListResult res = AlertListResult::fromJson(doc.object());
+        if (res.success) {
+            emit stationAlertsFetched(stationId, res.alerts);
+        }
+    });
+}
+
+void DeyeApiClient::fetchStationPowerProfile(qint64 stationId, const QString &dateYmd)
+{
+    if (m_baseUrl.isEmpty() || m_accessToken.isEmpty()) {
+        return;
+    }
+
+    const QDate d = QDate::fromString(dateYmd, QStringLiteral("yyyy-MM-dd"));
+    const QString endYmd = d.isValid() ? d.addDays(1).toString(QStringLiteral("yyyy-MM-dd")) : dateYmd;
+
+    const QUrl url(m_baseUrl + QStringLiteral("/v1.0/station/history"));
+    QJsonObject bodyObj;
+    bodyObj.insert(QStringLiteral("stationId"), stationId);
+    bodyObj.insert(QStringLiteral("granularity"), 1);
+    bodyObj.insert(QStringLiteral("startAt"), dateYmd);
+    bodyObj.insert(QStringLiteral("endAt"), endYmd);
+
+    QNetworkReply *reply = m_network.post(buildRequest(url, true), QJsonDocument(bodyObj).toJson(QJsonDocument::Compact));
+    connect(reply, &QNetworkReply::finished, this, [this, reply, stationId, dateYmd]() {
+        reply->deleteLater();
+        const QByteArray raw = reply->readAll();
+        if (qEnvironmentVariableIntValue("DEYE_DEBUG_HISTORY") == 1) {
+            qDebug().noquote() << "[station/history g=1]" << QString::fromUtf8(raw);
+        }
+        QJsonParseError parseErr{};
+        const QJsonDocument doc = QJsonDocument::fromJson(raw, &parseErr);
+        if (parseErr.error != QJsonParseError::NoError || !doc.isObject()) {
+            return;
+        }
+        const PowerProfileResult res = PowerProfileResult::fromJson(doc.object());
+        if (res.success) {
+            emit stationPowerProfileFetched(stationId, dateYmd, res.points);
+        }
+    });
+}
+
+void DeyeApiClient::fetchStationEnergyHistory(qint64 stationId, const QString &startDateYmd, const QString &endDateYmd, int granularity)
+{
+    if (m_baseUrl.isEmpty() || m_accessToken.isEmpty()) {
+        return;
+    }
+
+    const QUrl url(m_baseUrl + QStringLiteral("/v1.0/station/history"));
+    QJsonObject bodyObj;
+    bodyObj.insert(QStringLiteral("stationId"), stationId);
+    bodyObj.insert(QStringLiteral("granularity"), granularity);
+    bodyObj.insert(QStringLiteral("startAt"), startDateYmd);
+    bodyObj.insert(QStringLiteral("endAt"), endDateYmd);
+
+    QNetworkReply *reply = m_network.post(buildRequest(url, true), QJsonDocument(bodyObj).toJson(QJsonDocument::Compact));
+    connect(reply, &QNetworkReply::finished, this, [this, reply, stationId, granularity]() {
+        reply->deleteLater();
+        const QByteArray raw = reply->readAll();
+        if (qEnvironmentVariableIntValue("DEYE_DEBUG_HISTORY") == 1) {
+            qDebug().noquote() << "[station/history g=" << granularity << "]" << QString::fromUtf8(raw);
+        }
+        QJsonParseError parseErr{};
+        const QJsonDocument doc = QJsonDocument::fromJson(raw, &parseErr);
+        if (parseErr.error != QJsonParseError::NoError || !doc.isObject()) {
+            return;
+        }
+        const EnergyHistoryResult res = EnergyHistoryResult::fromJson(doc.object(), granularity);
+        if (res.success) {
+            emit stationEnergyHistoryFetched(stationId, granularity, res.items);
+        }
     });
 }
 
