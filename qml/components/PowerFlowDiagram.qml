@@ -55,7 +55,7 @@ Rectangle {
                 ctx.lineTo(x2, y2);
                 ctx.lineWidth = 3;
                 ctx.lineCap = "round";
-                ctx.strokeStyle = active ? strokeColor : "#424242";
+                ctx.strokeStyle = active ? strokeColor : Theme.border;
                 ctx.globalAlpha = active ? 0.35 : 0.7;
                 ctx.stroke();
                 ctx.globalAlpha = 1.0;

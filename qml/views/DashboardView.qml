@@ -7,34 +7,15 @@ Rectangle {
     id: root
     color: Theme.bgPrimary
 
-    component AdwSwitch: Switch {
-        id: sw
-        implicitWidth: 40
-        implicitHeight: 22
-        indicator: Rectangle {
-            implicitWidth: 40
-            implicitHeight: 22
-            radius: 11
-            color: sw.checked ? Theme.accent : "#4D4D4D"
-            Behavior on color { ColorAnimation { duration: 150 } }
-
-            Rectangle {
-                x: sw.checked ? parent.width - width - 3 : 3
-                anchors.verticalCenter: parent.verticalCenter
-                width: 16
-                height: 16
-                radius: 8
-                color: "#FFFFFF"
-                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-            }
-        }
-    }
+    // 0: Overview, 1: Devices, 2: Alerts, 3: Plant Info
+    property int currentSection: 0
+    readonly property var sectionTitles: ["Overview", "Devices", "Alerts", "Plant Info"]
 
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
 
-        // AdwHeaderBar-style Top Bar
+        // Native-styled Header Bar
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: 54
@@ -50,33 +31,70 @@ Rectangle {
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 14
+                anchors.leftMargin: 12
                 anchors.rightMargin: 14
                 spacing: 10
 
-                // Brand
-                RowLayout {
-                    spacing: 8
-                    Rectangle {
-                        width: 26
-                        height: 26
-                        radius: 7
-                        color: Theme.solarSoft
-                        border.color: Qt.rgba(Theme.solar.r, Theme.solar.g, Theme.solar.b, 0.5)
-                        border.width: 1
-                        Text {
-                            anchors.centerIn: parent
-                            text: "☀"
-                            color: Theme.solar
-                            font.pixelSize: 13
+                // Hamburger Menu Button (replaces DeyeDesktop logo)
+                ToolButton {
+                    id: menuButton
+                    text: "☰"
+                    font.pixelSize: 17
+                    ToolTip.visible: hovered
+                    ToolTip.text: "Navigation menu"
+                    onClicked: navMenu.open()
+
+                    ButtonGroup {
+                        id: navGroup
+                        exclusive: true
+                    }
+
+                    Menu {
+                        id: navMenu
+                        y: menuButton.height + 4
+
+                        MenuItem {
+                            text: "Overview"
+                            checkable: true
+                            autoExclusive: true
+                            ButtonGroup.group: navGroup
+                            checked: root.currentSection === 0
+                            onTriggered: root.currentSection = 0
+                        }
+                        MenuItem {
+                            text: "Devices"
+                            checkable: true
+                            autoExclusive: true
+                            ButtonGroup.group: navGroup
+                            checked: root.currentSection === 1
+                            onTriggered: root.currentSection = 1
+                        }
+                        MenuItem {
+                            text: "Alerts"
+                            checkable: true
+                            autoExclusive: true
+                            ButtonGroup.group: navGroup
+                            checked: root.currentSection === 2
+                            onTriggered: root.currentSection = 2
+                        }
+                        MenuItem {
+                            text: "Plant Info"
+                            checkable: true
+                            autoExclusive: true
+                            ButtonGroup.group: navGroup
+                            checked: root.currentSection === 3
+                            onTriggered: root.currentSection = 3
                         }
                     }
-                    Text {
-                        text: "DeyeDesktop"
-                        color: Theme.textPrimary
-                        font.pixelSize: 14
-                        font.weight: Font.Bold
-                    }
+                }
+
+                // Active section label (fixed width so header items stay stationary)
+                Label {
+                    Layout.preferredWidth: 86
+                    text: root.sectionTitles[root.currentSection]
+                    font.pixelSize: 14
+                    font.weight: Font.Bold
+                    elide: Text.ElideRight
                 }
 
                 // Demo Pill
@@ -87,7 +105,7 @@ Rectangle {
                     radius: Theme.radiusPill
                     color: Theme.solarSoft
                     border.color: Qt.rgba(Theme.solar.r, Theme.solar.g, Theme.solar.b, 0.5)
-                    Text {
+                    Label {
                         id: demoLbl
                         anchors.centerIn: parent
                         text: "DEMO"
@@ -97,75 +115,23 @@ Rectangle {
                     }
                 }
 
-                // Plant / Station Selector (shows plant name + address in menu)
+                // Native Plant / Station Selector (shows plant name + address in menu)
                 ComboBox {
                     id: stationCombo
                     Layout.preferredWidth: 280
                     Layout.maximumWidth: 360
-                    implicitHeight: 36
                     model: appController.stationModel
                     textRole: "name"
                     currentIndex: appController.selectedStationIndex
+                    popup.width: Math.max(width, 340)
                     onActivated: function(idx) {
                         appController.selectStationByIndex(idx)
-                    }
-
-                    contentItem: Column {
-                        leftPadding: 10
-                        rightPadding: 26
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: 0
-
-                        Text {
-                            width: stationCombo.width - 36
-                            text: stationCombo.displayText || "Select plant..."
-                            color: Theme.textPrimary
-                            font.pixelSize: 13
-                            font.weight: Font.DemiBold
-                            elide: Text.ElideRight
-                        }
-
-                        Text {
-                            visible: appController.selectedStationLocation.length > 0
-                            width: stationCombo.width - 36
-                            text: appController.selectedStationLocation
-                            color: Theme.textMuted
-                            font.pixelSize: 10
-                            elide: Text.ElideRight
-                        }
-                    }
-
-                    background: Rectangle {
-                        radius: Theme.radiusSm
-                        color: stationCombo.hovered ? Theme.bgButtonHover : Theme.bgButton
-                        border.color: stationCombo.activeFocus ? Theme.borderFocus : "transparent"
-                        border.width: 1
-                    }
-
-                    popup: Popup {
-                        y: stationCombo.height + 6
-                        width: Math.max(stationCombo.width, 340)
-                        implicitHeight: Math.min(360, contentItem.implicitHeight + 12)
-                        padding: 6
-                        background: Rectangle {
-                            color: Theme.bgElevated
-                            border.color: Theme.border
-                            border.width: 1
-                            radius: Theme.radiusLg
-                        }
-                        contentItem: ListView {
-                            clip: true
-                            implicitHeight: contentHeight
-                            spacing: 2
-                            model: stationCombo.popup.visible ? stationCombo.delegateModel : null
-                            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-                        }
                     }
 
                     delegate: ItemDelegate {
                         id: plantDelegate
                         width: ListView.view ? ListView.view.width : 328
-                        implicitHeight: model.location && model.location.length > 0 ? 52 : 38
+                        implicitHeight: model.location && model.location.length > 0 ? 52 : 36
                         highlighted: stationCombo.highlightedIndex === index
 
                         readonly property color dotColor: (model.connectionStatus === "NORMAL" || model.connectionStatus === "ONLINE")
@@ -175,12 +141,6 @@ Rectangle {
                                                             : (model.connectionStatus === "ALL_OFFLINE" || model.connectionStatus === "OFFLINE")
                                                               ? Theme.errorText
                                                               : Theme.textMuted
-
-                        background: Rectangle {
-                            radius: Theme.radiusSm
-                            color: plantDelegate.highlighted ? Theme.bgButtonHover
-                                 : (stationCombo.currentIndex === index ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.16) : "transparent")
-                        }
 
                         contentItem: RowLayout {
                             spacing: 10
@@ -197,31 +157,30 @@ Rectangle {
                                 Layout.fillWidth: true
                                 spacing: 2
 
-                                Text {
+                                Label {
                                     Layout.fillWidth: true
                                     text: model.name
-                                    color: Theme.textPrimary
-                                    font.pixelSize: 13
-                                    font.weight: stationCombo.currentIndex === index ? Font.Bold : Font.Medium
+                                    font.weight: stationCombo.currentIndex === index ? Font.Bold : Font.Normal
+                                    color: plantDelegate.highlighted ? Theme.accentText : Theme.textPrimary
                                     elide: Text.ElideRight
                                 }
 
-                                Text {
+                                Label {
                                     Layout.fillWidth: true
                                     visible: model.location && model.location.length > 0
                                     text: model.location
-                                    color: Theme.textSecondary
                                     font.pixelSize: 11
+                                    color: plantDelegate.highlighted ? Theme.accentText : Theme.textSecondary
+                                    opacity: plantDelegate.highlighted ? 0.85 : 1.0
                                     elide: Text.ElideRight
                                 }
                             }
 
-                            Text {
+                            Label {
                                 visible: model.installedCapacityKw > 0
                                 text: model.installedCapacityKw.toFixed(1) + " kWp"
-                                color: Theme.textMuted
                                 font.pixelSize: 11
-                                font.weight: Font.Medium
+                                color: plantDelegate.highlighted ? Theme.accentText : Theme.textMuted
                                 Layout.alignment: Qt.AlignVCenter
                             }
                         }
@@ -234,52 +193,18 @@ Rectangle {
 
                 Item { Layout.fillWidth: true }
 
-                // Auto-Refresh Switch
-                RowLayout {
-                    spacing: 8
-                    Text {
-                        text: "Auto (" + appController.refreshIntervalSec + "s)"
-                        color: Theme.textSecondary
-                        font.pixelSize: 12
-                    }
-                    AdwSwitch {
-                        checked: appController.autoRefreshEnabled
-                        onToggled: appController.autoRefreshEnabled = checked
-                    }
-                }
-
-                // Flat Adwaita Header Button: Refresh
+                // Red Sign Out Button
                 Button {
-                    implicitHeight: 34
-                    implicitWidth: 88
-                    enabled: !appController.busy
-                    onClicked: appController.refreshDashboard()
-
-                    contentItem: Text {
-                        text: appController.busy ? "Updating…" : "Refresh"
-                        color: Theme.textPrimary
-                        font.pixelSize: 12
-                        font.weight: Font.DemiBold
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-
-                    background: Rectangle {
-                        radius: Theme.radiusSm
-                        color: parent.hovered ? Theme.bgButtonHover : Theme.bgButton
-                    }
-                }
-
-                // Flat Adwaita Header Button: Sign Out
-                Button {
-                    implicitHeight: 34
-                    implicitWidth: 78
+                    id: signOutButton
+                    implicitHeight: 32
+                    leftPadding: 14
+                    rightPadding: 14
+                    text: "Sign Out"
                     onClicked: appController.logout()
 
-                    contentItem: Text {
-                        text: "Sign Out"
-                        color: Theme.errorText
-                        font.pixelSize: 12
+                    contentItem: Label {
+                        text: signOutButton.text
+                        color: "#FFFFFF"
                         font.weight: Font.DemiBold
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
@@ -287,7 +212,11 @@ Rectangle {
 
                     background: Rectangle {
                         radius: Theme.radiusSm
-                        color: parent.hovered ? Theme.errorSoft : "transparent"
+                        color: signOutButton.down
+                               ? Qt.darker(Theme.error, 1.15)
+                               : signOutButton.hovered
+                                 ? Qt.lighter(Theme.error, 1.12)
+                                 : Theme.error
                     }
                 }
             }
@@ -318,12 +247,12 @@ Rectangle {
                     implicitHeight: dashErr.implicitHeight + 18
                     radius: Theme.radiusMd
                     color: Theme.errorSoft
-                    border.color: Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.6)
+                    border.color: Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.55)
 
                     RowLayout {
                         anchors.fill: parent
                         anchors.margins: 10
-                        Text {
+                        Label {
                             id: dashErr
                             Layout.fillWidth: true
                             text: appController.errorMessage
@@ -332,19 +261,9 @@ Rectangle {
                             wrapMode: Text.WordWrap
                         }
                         Button {
+                            flat: true
                             text: "Dismiss"
-                            implicitHeight: 26
                             onClicked: appController.clearError()
-                            contentItem: Text {
-                                text: parent.text
-                                color: Theme.errorText
-                                font.pixelSize: 11
-                                font.weight: Font.DemiBold
-                            }
-                            background: Rectangle {
-                                radius: Theme.radiusSm
-                                color: parent.hovered ? Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.25) : "transparent"
-                            }
                         }
                     }
                 }
@@ -356,13 +275,12 @@ Rectangle {
 
                     ColumnLayout {
                         spacing: 3
-                        Text {
+                        Label {
                             text: appController.selectedStationName || "No Plant Selected"
-                            color: Theme.textPrimary
                             font.pixelSize: 20
                             font.weight: Font.Bold
                         }
-                        Text {
+                        Label {
                             text: {
                                 var parts = [];
                                 if (appController.installedCapacityKw > 0)
@@ -378,76 +296,333 @@ Rectangle {
 
                     Item { Layout.fillWidth: true }
 
-                    Text {
+                    Label {
                         text: "Updated " + appController.lastUpdateText
                         color: Theme.textMuted
                         font.pixelSize: 12
                     }
                 }
 
-                // Live Power Flow Card
-                PowerFlowDiagram {
+                // Section 0: Overview
+                ColumnLayout {
+                    visible: root.currentSection === 0
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 300
-                    generationPowerW: appController.generationPowerW
-                    consumptionPowerW: appController.consumptionPowerW
-                    batteryPowerW: appController.batteryPowerW
-                    batterySoc: appController.batterySoc
-                    hasBatterySoc: appController.hasBatterySoc
-                    gridPowerW: appController.gridPowerW
+                    spacing: 16
+
+                    PowerFlowDiagram {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 300
+                        generationPowerW: appController.generationPowerW
+                        consumptionPowerW: appController.consumptionPowerW
+                        batteryPowerW: appController.batteryPowerW
+                        batterySoc: appController.batterySoc
+                        hasBatterySoc: appController.hasBatterySoc
+                        gridPowerW: appController.gridPowerW
+                    }
+
+                    GridLayout {
+                        Layout.fillWidth: true
+                        columns: width >= 800 ? 4 : 2
+                        columnSpacing: 12
+                        rowSpacing: 12
+
+                        MetricCard {
+                            Layout.fillWidth: true
+                            title: "Solar Generation"
+                            valueText: appController.formatPower(appController.generationPowerW)
+                            subtitle: appController.generationPowerW > 10 ? "Producing power" : "Standby / Night"
+                            accentColor: Theme.solar
+                        }
+
+                        MetricCard {
+                            Layout.fillWidth: true
+                            title: "Battery"
+                            valueText: appController.hasBatterySoc
+                                       ? (Math.round(appController.batterySoc) + "%")
+                                       : appController.formatPower(appController.batteryPowerW)
+                            inlineSubtitle: {
+                                var p = appController.formatPower(appController.batteryPowerW);
+                                if (appController.batteryPowerW > 10) return "Charging • " + p;
+                                if (appController.batteryPowerW < -10) return "Discharging • " + p;
+                                return "Idle";
+                            }
+                            subtitle: ""
+                            accentColor: Theme.battery
+                            showProgress: appController.hasBatterySoc
+                            progressValue: appController.batterySoc
+                        }
+
+                        MetricCard {
+                            Layout.fillWidth: true
+                            title: "Grid"
+                            valueText: appController.formatPower(appController.gridPowerW)
+                            subtitle: appController.gridPowerW > 10 ? "Importing from grid"
+                                    : appController.gridPowerW < -10 ? "Exporting to grid"
+                                    : "Balanced"
+                            accentColor: Theme.grid
+                        }
+
+                        MetricCard {
+                            Layout.fillWidth: true
+                            title: "Home Load"
+                            valueText: appController.formatPower(appController.consumptionPowerW)
+                            subtitle: "Current consumption"
+                            accentColor: Theme.load
+                        }
+                    }
                 }
 
-                // 4 KPI Cards
-                GridLayout {
+                // Section 1: Devices
+                Rectangle {
+                    visible: root.currentSection === 1
                     Layout.fillWidth: true
-                    columns: width >= 800 ? 4 : 2
-                    columnSpacing: 12
-                    rowSpacing: 12
+                    implicitHeight: appController.deviceCount > 0
+                                    ? devicesListCol.implicitHeight
+                                    : (devicesEmpty.implicitHeight + 48)
+                    radius: Theme.radiusLg
+                    color: Theme.bgSurface
+                    border.color: Theme.border
+                    border.width: 1
 
-                    MetricCard {
-                        Layout.fillWidth: true
-                        title: "Solar Generation"
-                        valueText: appController.formatPower(appController.generationPowerW)
-                        subtitle: appController.generationPowerW > 10 ? "Producing power" : "Standby / Night"
-                        accentColor: Theme.solar
-                    }
+                    ColumnLayout {
+                        id: devicesEmpty
+                        visible: appController.deviceCount === 0
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.margins: 24
+                        spacing: 6
 
-                    MetricCard {
-                        Layout.fillWidth: true
-                        title: "Battery"
-                        valueText: appController.hasBatterySoc
-                                   ? (Math.round(appController.batterySoc) + "%")
-                                   : appController.formatPower(appController.batteryPowerW)
-                        subtitle: {
-                            var p = appController.formatPower(appController.batteryPowerW);
-                            if (appController.batteryPowerW > 10) return "Charging • " + p;
-                            if (appController.batteryPowerW < -10) return "Discharging • " + p;
-                            return "Idle";
+                        Label {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: appController.busy ? "Loading devices…" : "No Devices Found"
+                            font.pixelSize: 16
+                            font.weight: Font.Bold
                         }
-                        accentColor: Theme.battery
-                        showProgress: appController.hasBatterySoc
-                        progressValue: appController.batterySoc
+                        Label {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: "No inverters, data loggers, or batteries were returned for this plant."
+                            color: Theme.textSecondary
+                        }
                     }
 
-                    MetricCard {
+                    ColumnLayout {
+                        id: devicesListCol
+                        visible: appController.deviceCount > 0
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        spacing: 0
+
+                        Repeater {
+                            model: appController.deviceModel
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 0
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    Layout.margins: 14
+                                    spacing: 12
+
+                                    // Device Type Badge
+                                    Rectangle {
+                                        implicitWidth: typeLbl.implicitWidth + 16
+                                        implicitHeight: 26
+                                        radius: Theme.radiusSm
+                                        color: Theme.bgElevated
+                                        border.color: Theme.border
+                                        border.width: 1
+
+                                        Label {
+                                            id: typeLbl
+                                            anchors.centerIn: parent
+                                            text: model.deviceType
+                                            color: Theme.textSecondary
+                                            font.pixelSize: 11
+                                            font.weight: Font.DemiBold
+                                        }
+                                    }
+
+                                    // Name, Model & Serial Number
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 2
+
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: model.deviceName
+                                            font.pixelSize: 14
+                                            font.weight: Font.DemiBold
+                                            elide: Text.ElideRight
+                                        }
+
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: {
+                                                var parts = [];
+                                                if (model.deviceSn.length > 0) parts.push("SN: " + model.deviceSn);
+                                                if (model.productId.length > 0 && model.productId !== model.deviceName)
+                                                    parts.push(model.productId);
+                                                return parts.join("  •  ");
+                                            }
+                                            color: Theme.textSecondary
+                                            font.pixelSize: 12
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+
+                                    // Last Seen
+                                    Label {
+                                        visible: model.lastSeenText !== "—"
+                                        text: model.lastSeenText
+                                        color: Theme.textMuted
+                                        font.pixelSize: 11
+                                    }
+
+                                    // Online / Offline Badge
+                                    StatusBadge {
+                                        status: model.connectionStatus
+                                    }
+
+                                    // Inverter Settings Button
+                                    Button {
+                                        visible: model.deviceType === "Inverter" || model.deviceType === "Microinverter"
+                                        text: "Settings"
+                                        onClicked: {
+                                            appController.openInverterSettings(model.deviceSn, model.deviceName)
+                                            inverterSettingsDialog.open()
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    visible: index < appController.deviceCount - 1
+                                    Layout.fillWidth: true
+                                    height: 1
+                                    color: Theme.separator
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Section 2: Alerts
+                Rectangle {
+                    visible: root.currentSection === 2
+                    Layout.fillWidth: true
+                    implicitHeight: alertsPlaceholder.implicitHeight + 48
+                    radius: Theme.radiusLg
+                    color: Theme.bgSurface
+                    border.color: Theme.border
+                    border.width: 1
+
+                    ColumnLayout {
+                        id: alertsPlaceholder
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.margins: 24
+                        spacing: 6
+
+                        Label {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: "Alerts"
+                            font.pixelSize: 17
+                            font.weight: Font.Bold
+                        }
+                        Label {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: "Active warnings and historical fault notifications for this plant will appear here."
+                            color: Theme.textSecondary
+                        }
+                    }
+                }
+
+                // Section 3: Plant Info
+                Rectangle {
+                    visible: root.currentSection === 3
+                    Layout.fillWidth: true
+                    implicitHeight: plantInfoCol.implicitHeight + 8
+                    radius: Theme.radiusLg
+                    color: Theme.bgSurface
+                    border.color: Theme.border
+                    border.width: 1
+
+                    component InfoRow: ColumnLayout {
+                        property string label: ""
+                        property string value: ""
+                        property bool showSeparator: true
                         Layout.fillWidth: true
-                        title: "Grid"
-                        valueText: appController.formatPower(appController.gridPowerW)
-                        subtitle: appController.gridPowerW > 10 ? "Importing from grid"
-                                : appController.gridPowerW < -10 ? "Exporting to grid"
-                                : "Balanced"
-                        accentColor: Theme.grid
+                        spacing: 0
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.margins: 14
+                            spacing: 12
+                            Label {
+                                text: label
+                                color: Theme.textSecondary
+                                Layout.preferredWidth: 180
+                            }
+                            Label {
+                                text: value
+                                font.weight: Font.Medium
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+
+                        Rectangle {
+                            visible: showSeparator
+                            Layout.fillWidth: true
+                            height: 1
+                            color: Theme.separator
+                        }
                     }
 
-                    MetricCard {
-                        Layout.fillWidth: true
-                        title: "Home Load"
-                        valueText: appController.formatPower(appController.consumptionPowerW)
-                        subtitle: "Current consumption"
-                        accentColor: Theme.load
+                    ColumnLayout {
+                        id: plantInfoCol
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        spacing: 0
+
+                        InfoRow {
+                            label: "Plant Name"
+                            value: appController.selectedStationName || "—"
+                        }
+                        InfoRow {
+                            label: "Plant ID"
+                            value: appController.selectedStationId > 0 ? String(appController.selectedStationId) : "—"
+                        }
+                        InfoRow {
+                            label: "Address"
+                            value: appController.selectedStationLocation || "Not specified"
+                        }
+                        InfoRow {
+                            label: "Installed Capacity"
+                            value: appController.installedCapacityKw > 0
+                                   ? (appController.installedCapacityKw.toFixed(2) + " kWp")
+                                   : "—"
+                        }
+                        InfoRow {
+                            label: "Connection Status"
+                            value: appController.connectionStatus
+                        }
+                        InfoRow {
+                            label: "Last Update"
+                            value: appController.lastUpdateText
+                            showSeparator: false
+                        }
                     }
                 }
             }
         }
+    }
+
+    InverterSettingsDialog {
+        id: inverterSettingsDialog
     }
 }

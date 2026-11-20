@@ -7,79 +7,42 @@ Rectangle {
     id: root
     color: Theme.bgPrimary
 
-    property int loginMethod: appController.savedLoginMethod
     property bool showAppSecret: false
     property bool showPassword: false
+    // Auto-collapse Developer API Settings once App ID & App Secret are saved
+    property bool devSectionExpanded: appController.savedAppId.length === 0 || appController.savedAppSecret.length === 0
 
     function submitLogin() {
+        if (appIdField.text.trim().length === 0 || appSecretField.text.trim().length === 0) {
+            devSectionExpanded = true
+        }
         appController.login(
             regionCombo.currentIndex,
             customUrlField.text,
             appIdField.text,
             appSecretField.text,
-            root.loginMethod,
+            0, // Email login
             emailField.text,
-            countryCodeField.text,
-            mobileField.text,
-            usernameField.text,
+            "",
+            "",
+            "",
             companyIdField.text,
             passwordField.text,
-            rememberSwitch.checked
+            rememberCheck.checked
         )
     }
 
-    component GroupTitle: Text {
+    component GroupTitle: Label {
         color: Theme.textSecondary
         font.pixelSize: 12
         font.weight: Font.Bold
         leftPadding: 4
     }
 
-    component FieldLabel: Text {
+    component FieldLabel: Label {
         color: Theme.textSecondary
         font.pixelSize: 12
         font.weight: Font.Medium
-    }
-
-    component AdwField: TextField {
-        Layout.fillWidth: true
-        implicitHeight: 36
-        color: Theme.textPrimary
-        placeholderTextColor: Theme.textMuted
-        font.pixelSize: 13
-        leftPadding: 11
-        rightPadding: 11
-        selectionColor: Theme.accent
-        selectedTextColor: Theme.textPrimary
-        background: Rectangle {
-            radius: Theme.radiusSm
-            color: Theme.bgInput
-            border.color: parent.activeFocus ? Theme.borderFocus : Theme.border
-            border.width: parent.activeFocus ? 1.5 : 1
-        }
-    }
-
-    component AdwSwitch: Switch {
-        id: sw
-        implicitWidth: 44
-        implicitHeight: 24
-        indicator: Rectangle {
-            implicitWidth: 44
-            implicitHeight: 24
-            radius: 12
-            color: sw.checked ? Theme.accent : "#4D4D4D"
-            Behavior on color { ColorAnimation { duration: 150 } }
-
-            Rectangle {
-                x: sw.checked ? parent.width - width - 3 : 3
-                anchors.verticalCenter: parent.verticalCenter
-                width: 18
-                height: 18
-                radius: 9
-                color: "#FFFFFF"
-                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-            }
-        }
     }
 
     Flickable {
@@ -90,10 +53,10 @@ Rectangle {
 
         ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
-        // AdwClamp-style centered column
+        // AdwClamp-style centered column with native KDE controls
         ColumnLayout {
             id: clampContainer
-            width: Math.min(460, parent.width - 40)
+            width: Math.min(440, parent.width - 40)
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
             anchors.topMargin: Math.max(28, (parent.height - implicitHeight) / 2)
@@ -113,7 +76,7 @@ Rectangle {
                     border.color: Qt.rgba(Theme.solar.r, Theme.solar.g, Theme.solar.b, 0.5)
                     border.width: 1
 
-                    Text {
+                    Label {
                         anchors.centerIn: parent
                         text: "☀"
                         color: Theme.solar
@@ -121,35 +84,33 @@ Rectangle {
                     }
                 }
 
-                Text {
+                Label {
                     Layout.alignment: Qt.AlignHCenter
                     text: "DeyeDesktop"
-                    color: Theme.textPrimary
                     font.pixelSize: 22
                     font.weight: Font.Bold
                 }
 
-                Text {
+                Label {
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
-                    text: "Connect with your Deye Cloud Developer Portal account"
+                    text: "Sign in to your Deye Cloud account"
                     color: Theme.textSecondary
-                    font.pixelSize: 13
                     wrapMode: Text.WordWrap
                 }
             }
 
-            // Error Banner (AdwBanner style)
+            // Error Banner
             Rectangle {
                 visible: appController.errorMessage.length > 0
                 Layout.fillWidth: true
                 implicitHeight: errText.implicitHeight + 20
                 radius: Theme.radiusMd
                 color: Theme.errorSoft
-                border.color: Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.6)
+                border.color: Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.55)
                 border.width: 1
 
-                Text {
+                Label {
                     id: errText
                     anchors.fill: parent
                     anchors.margins: 10
@@ -160,154 +121,7 @@ Rectangle {
                 }
             }
 
-            // Group 1: Developer API Credentials (AdwPreferencesGroup)
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 6
-
-                GroupTitle { text: "Developer Application" }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    implicitHeight: devGroupCol.implicitHeight + 24
-                    radius: Theme.radiusLg
-                    color: Theme.bgSurface
-                    border.color: Theme.border
-                    border.width: 1
-
-                    ColumnLayout {
-                        id: devGroupCol
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        anchors.margins: 12
-                        spacing: 10
-
-                        // Region
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 4
-                            FieldLabel { text: "Cloud Region" }
-
-                            ComboBox {
-                                id: regionCombo
-                                Layout.fillWidth: true
-                                implicitHeight: 36
-                                model: appController.regionNames
-                                currentIndex: Math.max(0, Math.min(appController.savedRegionIndex, count - 1))
-
-                                contentItem: Text {
-                                    leftPadding: 11
-                                    rightPadding: 28
-                                    text: regionCombo.displayText
-                                    color: Theme.textPrimary
-                                    font.pixelSize: 13
-                                    verticalAlignment: Text.AlignVCenter
-                                    elide: Text.ElideRight
-                                }
-
-                                background: Rectangle {
-                                    radius: Theme.radiusSm
-                                    color: Theme.bgInput
-                                    border.color: regionCombo.activeFocus ? Theme.borderFocus : Theme.border
-                                }
-
-                                popup: Popup {
-                                    y: regionCombo.height + 4
-                                    width: regionCombo.width
-                                    implicitHeight: contentItem.implicitHeight + 12
-                                    padding: 6
-                                    background: Rectangle {
-                                        color: Theme.bgElevated
-                                        border.color: Theme.border
-                                        radius: Theme.radiusMd
-                                    }
-                                    contentItem: ListView {
-                                        clip: true
-                                        implicitHeight: contentHeight
-                                        model: regionCombo.popup.visible ? regionCombo.delegateModel : null
-                                    }
-                                }
-
-                                delegate: ItemDelegate {
-                                    width: regionCombo.width - 12
-                                    implicitHeight: 34
-                                    contentItem: Text {
-                                        text: modelData
-                                        color: Theme.textPrimary
-                                        font.pixelSize: 13
-                                        verticalAlignment: Text.AlignVCenter
-                                    }
-                                    background: Rectangle {
-                                        radius: Theme.radiusSm
-                                        color: highlighted ? Theme.bgButtonHover : "transparent"
-                                    }
-                                    highlighted: regionCombo.highlightedIndex === index
-                                }
-                            }
-
-                            AdwField {
-                                id: customUrlField
-                                visible: regionCombo.currentIndex === 2
-                                text: appController.savedCustomBaseUrl
-                                placeholderText: "https://eu1-developer.deyecloud.com"
-                            }
-                        }
-
-                        // App ID + App Secret
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 10
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 4
-                                FieldLabel { text: "App ID" }
-                                AdwField {
-                                    id: appIdField
-                                    text: appController.savedAppId
-                                    placeholderText: "App ID"
-                                }
-                            }
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 4
-                                FieldLabel { text: "App Secret" }
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 4
-                                    AdwField {
-                                        id: appSecretField
-                                        text: appController.savedAppSecret
-                                        placeholderText: "App Secret"
-                                        echoMode: root.showAppSecret ? TextInput.Normal : TextInput.Password
-                                    }
-                                    Button {
-                                        implicitWidth: 44
-                                        implicitHeight: 36
-                                        text: root.showAppSecret ? "Hide" : "Show"
-                                        onClicked: root.showAppSecret = !root.showAppSecret
-                                        contentItem: Text {
-                                            text: parent.text
-                                            color: Theme.textSecondary
-                                            font.pixelSize: 11
-                                            horizontalAlignment: Text.AlignHCenter
-                                            verticalAlignment: Text.AlignVCenter
-                                        }
-                                        background: Rectangle {
-                                            radius: Theme.radiusSm
-                                            color: parent.hovered ? Theme.bgButtonHover : Theme.bgButton
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Group 2: Account Credentials (AdwPreferencesGroup)
+            // Group 1: Account (Email + Password + Remember checkbox)
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 6
@@ -316,7 +130,7 @@ Rectangle {
 
                 Rectangle {
                     Layout.fillWidth: true
-                    implicitHeight: accGroupCol.implicitHeight + 24
+                    implicitHeight: accGroupCol.implicitHeight + 28
                     radius: Theme.radiusLg
                     color: Theme.bgSurface
                     border.color: Theme.border
@@ -327,223 +141,256 @@ Rectangle {
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.top: parent.top
-                        anchors.margins: 12
+                        anchors.margins: 14
                         spacing: 10
 
-                        // Adwaita ToggleGroup style login method switcher
-                        Rectangle {
-                            Layout.fillWidth: true
-                            height: 34
-                            radius: Theme.radiusMd
-                            color: Theme.bgInput
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.margins: 3
-                                spacing: 3
-
-                                Repeater {
-                                    model: ["Email", "Phone", "Username"]
-                                    delegate: Rectangle {
-                                        Layout.fillWidth: true
-                                        Layout.fillHeight: true
-                                        radius: Theme.radiusSm
-                                        color: root.loginMethod === index ? Theme.bgButtonHover : "transparent"
-
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: modelData
-                                            color: root.loginMethod === index ? Theme.textPrimary : Theme.textSecondary
-                                            font.pixelSize: 12
-                                            font.weight: root.loginMethod === index ? Font.DemiBold : Font.Normal
-                                        }
-
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: root.loginMethod = index
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Identifier fields
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: 4
-                            visible: root.loginMethod === 0
                             FieldLabel { text: "Email Address" }
-                            AdwField {
+                            TextField {
                                 id: emailField
+                                Layout.fillWidth: true
                                 text: appController.savedEmail
                                 placeholderText: "you@example.com"
                                 onAccepted: root.submitLogin()
                             }
                         }
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 10
-                            visible: root.loginMethod === 1
-
-                            ColumnLayout {
-                                Layout.preferredWidth: 96
-                                spacing: 4
-                                FieldLabel { text: "Country Code" }
-                                AdwField {
-                                    id: countryCodeField
-                                    text: appController.savedCountryCode
-                                    placeholderText: "48"
-                                }
-                            }
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 4
-                                FieldLabel { text: "Mobile Number" }
-                                AdwField {
-                                    id: mobileField
-                                    text: appController.savedMobile
-                                    placeholderText: "500600700"
-                                    onAccepted: root.submitLogin()
-                                }
-                            }
-                        }
-
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 4
-                            visible: root.loginMethod === 2
-                            FieldLabel { text: "Username" }
-                            AdwField {
-                                id: usernameField
-                                text: appController.savedUsername
-                                placeholderText: "Deye Cloud username"
-                                onAccepted: root.submitLogin()
-                            }
-                        }
-
-                        // Password
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: 4
                             FieldLabel { text: "Password" }
                             RowLayout {
                                 Layout.fillWidth: true
-                                spacing: 4
-                                AdwField {
+                                spacing: 6
+                                TextField {
                                     id: passwordField
+                                    Layout.fillWidth: true
                                     text: appController.savedPassword
-                                    placeholderText: "Password (hashed locally with SHA-256)"
+                                    placeholderText: "Account password"
                                     echoMode: root.showPassword ? TextInput.Normal : TextInput.Password
                                     onAccepted: root.submitLogin()
                                 }
                                 Button {
-                                    implicitWidth: 44
-                                    implicitHeight: 36
                                     text: root.showPassword ? "Hide" : "Show"
                                     onClicked: root.showPassword = !root.showPassword
-                                    contentItem: Text {
-                                        text: parent.text
-                                        color: Theme.textSecondary
-                                        font.pixelSize: 11
-                                        horizontalAlignment: Text.AlignHCenter
-                                        verticalAlignment: Text.AlignVCenter
-                                    }
-                                    background: Rectangle {
-                                        radius: Theme.radiusSm
-                                        color: parent.hovered ? Theme.bgButtonHover : Theme.bgButton
-                                    }
                                 }
                             }
                         }
 
-                        // Optional Company ID
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 4
-                            FieldLabel { text: "Company ID (optional)" }
-                            AdwField {
-                                id: companyIdField
-                                text: appController.savedCompanyId
-                                placeholderText: "Leave empty for personal accounts"
-                                onAccepted: root.submitLogin()
-                            }
-                        }
-
-                        // Separator
                         Rectangle {
                             Layout.fillWidth: true
                             height: 1
                             color: Theme.separator
                         }
 
-                        // AdwSwitchRow for Remember credentials
-                        RowLayout {
+                        CheckBox {
+                            id: rememberCheck
                             Layout.fillWidth: true
-                            spacing: 12
-                            Text {
+                            checked: appController.savedRememberMe
+                            text: "Remember credentials on this computer"
+                        }
+                    }
+                }
+            }
+
+            // Group 2: Collapsible Developer API Settings
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: devExpanderCol.implicitHeight
+                radius: Theme.radiusLg
+                color: Theme.bgSurface
+                border.color: Theme.border
+                border.width: 1
+                clip: true
+
+                ColumnLayout {
+                    id: devExpanderCol
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    spacing: 0
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: 50
+                        color: headerHover.containsMouse ? Theme.bgElevated : "transparent"
+                        radius: Theme.radiusLg
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+                            spacing: 10
+
+                            ColumnLayout {
                                 Layout.fillWidth: true
-                                text: "Remember credentials"
-                                color: Theme.textPrimary
-                                font.pixelSize: 13
+                                spacing: 1
+
+                                Label {
+                                    text: "Developer API Settings"
+                                    font.weight: Font.DemiBold
+                                }
+
+                                Label {
+                                    text: (appIdField.text.trim().length > 0 && appSecretField.text.trim().length > 0)
+                                          ? (regionCombo.displayText + " • Configured")
+                                          : "Region, App ID & App Secret"
+                                    color: Theme.textMuted
+                                    font.pixelSize: 11
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
                             }
-                            AdwSwitch {
-                                id: rememberSwitch
-                                checked: appController.savedRememberMe
+
+                            Label {
+                                text: root.devSectionExpanded ? "▾" : "▸"
+                                color: Theme.textSecondary
+                                font.pixelSize: 15
+                            }
+                        }
+
+                        MouseArea {
+                            id: headerHover
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.devSectionExpanded = !root.devSectionExpanded
+                        }
+                    }
+
+                    ColumnLayout {
+                        visible: root.devSectionExpanded
+                        Layout.fillWidth: true
+                        spacing: 0
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 1
+                            color: Theme.separator
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.margins: 14
+                            spacing: 10
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 4
+                                FieldLabel { text: "Cloud Region" }
+
+                                ComboBox {
+                                    id: regionCombo
+                                    Layout.fillWidth: true
+                                    model: appController.regionNames
+                                    currentIndex: Math.max(0, Math.min(appController.savedRegionIndex, count - 1))
+                                }
+
+                                TextField {
+                                    id: customUrlField
+                                    Layout.fillWidth: true
+                                    visible: regionCombo.currentIndex === 2
+                                    text: appController.savedCustomBaseUrl
+                                    placeholderText: "https://eu1-developer.deyecloud.com"
+                                }
+                            }
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 10
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 4
+                                    FieldLabel { text: "App ID" }
+                                    TextField {
+                                        id: appIdField
+                                        Layout.fillWidth: true
+                                        text: appController.savedAppId
+                                        placeholderText: "App ID"
+                                    }
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 4
+                                    FieldLabel { text: "App Secret" }
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 6
+                                        TextField {
+                                            id: appSecretField
+                                            Layout.fillWidth: true
+                                            text: appController.savedAppSecret
+                                            placeholderText: "App Secret"
+                                            echoMode: root.showAppSecret ? TextInput.Normal : TextInput.Password
+                                        }
+                                        Button {
+                                            text: root.showAppSecret ? "Hide" : "Show"
+                                            onClicked: root.showAppSecret = !root.showAppSecret
+                                        }
+                                    }
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 4
+                                FieldLabel { text: "Company ID (optional)" }
+                                TextField {
+                                    id: companyIdField
+                                    Layout.fillWidth: true
+                                    text: appController.savedCompanyId
+                                    placeholderText: "Leave empty for personal accounts"
+                                    onAccepted: root.submitLogin()
+                                }
                             }
                         }
                     }
                 }
             }
 
-            // Action Buttons (Adwaita pill suggested-action + flat secondary)
+            // Action Buttons (native KDE buttons)
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 8
 
                 Button {
+                    id: signInButton
                     Layout.fillWidth: true
-                    implicitHeight: 40
+                    implicitHeight: 38
                     enabled: !appController.busy
+                    text: appController.busy ? "Signing in..." : "Sign In"
                     onClicked: root.submitLogin()
 
-                    contentItem: Text {
-                        text: appController.busy ? "Signing in..." : "Sign In"
-                        color: "#FFFFFF"
-                        font.pixelSize: 14
+                    contentItem: Label {
+                        text: signInButton.text
+                        color: signInButton.enabled ? Theme.accentText : Theme.textMuted
                         font.weight: Font.Bold
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
 
                     background: Rectangle {
-                        radius: Theme.radiusPill
-                        color: !parent.enabled ? Theme.bgButton
-                             : parent.hovered ? Theme.accentHover : Theme.accent
+                        radius: Theme.radiusSm
+                        color: !signInButton.enabled
+                               ? Theme.bgElevated
+                               : signInButton.down
+                                 ? Qt.darker(Theme.accent, 1.15)
+                                 : signInButton.hovered
+                                   ? Qt.lighter(Theme.accent, 1.12)
+                                   : Theme.accent
                     }
                 }
 
                 Button {
                     Layout.fillWidth: true
-                    implicitHeight: 36
+                    flat: true
                     enabled: !appController.busy
+                    text: "Preview Demo Mode"
                     onClicked: appController.loginDemo()
-
-                    contentItem: Text {
-                        text: "Preview Demo Mode"
-                        color: Theme.textSecondary
-                        font.pixelSize: 13
-                        font.weight: Font.Medium
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-
-                    background: Rectangle {
-                        radius: Theme.radiusPill
-                        color: parent.hovered ? Theme.bgButton : "transparent"
-                    }
                 }
             }
         }

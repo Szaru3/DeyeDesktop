@@ -2,6 +2,8 @@
 
 #include "api/DeyeApiClient.h"
 #include "storage/SettingsStore.h"
+#include "viewmodel/DeviceListModel.h"
+#include "viewmodel/InverterSettingsController.h"
 #include "viewmodel/StationListModel.h"
 
 #include <QObject>
@@ -34,8 +36,11 @@ class AppController : public QObject {
     Q_PROPERTY(QString savedPassword READ savedPassword CONSTANT)
     Q_PROPERTY(bool savedRememberMe READ savedRememberMe CONSTANT)
 
-    // Stations
+    // Stations & Devices
     Q_PROPERTY(deye::StationListModel *stationModel READ stationModel CONSTANT)
+    Q_PROPERTY(deye::DeviceListModel *deviceModel READ deviceModel CONSTANT)
+    Q_PROPERTY(deye::InverterSettingsController *inverterSettings READ inverterSettings CONSTANT)
+    Q_PROPERTY(int deviceCount READ deviceCount NOTIFY devicesChanged)
     Q_PROPERTY(int selectedStationIndex READ selectedStationIndex NOTIFY selectedStationChanged)
     Q_PROPERTY(qint64 selectedStationId READ selectedStationId NOTIFY selectedStationChanged)
     Q_PROPERTY(QString selectedStationName READ selectedStationName NOTIFY selectedStationChanged)
@@ -79,6 +84,9 @@ public:
     [[nodiscard]] bool savedRememberMe() const { return m_saved.rememberMe; }
 
     [[nodiscard]] StationListModel *stationModel() { return &m_stationModel; }
+    [[nodiscard]] DeviceListModel *deviceModel() { return &m_deviceModel; }
+    [[nodiscard]] InverterSettingsController *inverterSettings() { return &m_inverterSettings; }
+    [[nodiscard]] int deviceCount() const { return m_deviceModel.rowCount(); }
     [[nodiscard]] int selectedStationIndex() const { return m_selectedStationIndex; }
     [[nodiscard]] qint64 selectedStationId() const { return m_selectedStationId; }
     [[nodiscard]] QString selectedStationName() const { return m_selectedStationName; }
@@ -113,6 +121,7 @@ public:
     Q_INVOKABLE void loginDemo();
     Q_INVOKABLE void logout();
     Q_INVOKABLE void selectStationByIndex(int index);
+    Q_INVOKABLE void openInverterSettings(const QString &deviceSn, const QString &deviceName);
     Q_INVOKABLE void refreshStations();
     Q_INVOKABLE void refreshDashboard();
     Q_INVOKABLE void clearError();
@@ -123,6 +132,7 @@ signals:
     void busyChanged();
     void errorMessageChanged();
     void selectedStationChanged();
+    void devicesChanged();
     void telemetryChanged();
     void refreshSettingsChanged();
 
@@ -131,15 +141,19 @@ private:
     void setErrorMessage(const QString &msg);
     void updateTimerState();
     void applyDemoTelemetry(qint64 stationId);
+    void applyDemoDevices(qint64 stationId);
     void applyTelemetry(const StationLatestData &data);
     void onAuthenticated(const DeyeAuthResult &result);
     void onStationsFetched(const QVector<StationInfo> &stations);
     void onStationLatestFetched(qint64 stationId, const StationLatestData &data);
+    void onStationDevicesFetched(qint64 stationId, const QVector<DeviceInfo> &devices);
     void onRequestFailed(const QString &context, const QString &message, bool authExpired);
 
     DeyeApiClient m_apiClient;
     SettingsStore m_settingsStore;
     StationListModel m_stationModel;
+    DeviceListModel m_deviceModel;
+    InverterSettingsController m_inverterSettings;
     QTimer m_refreshTimer;
 
     QVector<DeyeRegion> m_regions;
@@ -163,7 +177,7 @@ private:
     int m_demoTick = 0;
 
     bool m_autoRefreshEnabled = true;
-    int m_refreshIntervalSec = 60;
+    int m_refreshIntervalSec = 120;
 };
 
 } // namespace deye

@@ -1,19 +1,28 @@
 #include "viewmodel/AppController.h"
 
-#include <QGuiApplication>
+#include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickStyle>
 
 int main(int argc, char *argv[])
 {
-    QGuiApplication app(argc, argv);
+    // QApplication enables native QStyle integration (required by KDE's org.kde.desktop style)
+    QApplication app(argc, argv);
     app.setOrganizationName(QStringLiteral("DeyeDesktop"));
     app.setApplicationName(QStringLiteral("DeyeDesktop"));
     app.setApplicationVersion(QStringLiteral("0.1.0"));
 
-    // Use Basic style so custom Theme tokens render identically on Linux and Windows
-    QQuickStyle::setStyle(QStringLiteral("Basic"));
+    if (qEnvironmentVariableIsEmpty("QT_QUICK_CONTROLS_STYLE")) {
+#if defined(Q_OS_WIN)
+        QQuickStyle::setStyle(QStringLiteral("FluentWinUI3"));
+#else
+        if (qEnvironmentVariable("XDG_CURRENT_DESKTOP").contains(QStringLiteral("KDE"), Qt::CaseInsensitive)) {
+            QQuickStyle::setStyle(QStringLiteral("org.kde.desktop"));
+        }
+#endif
+        QQuickStyle::setFallbackStyle(QStringLiteral("Fusion"));
+    }
 
     deye::AppController controller;
 

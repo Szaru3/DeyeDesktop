@@ -9,6 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(Qt6 6.5 REQUIRED COMPONENTS
     Core
     Gui
+    Widgets
     Qml
     Quick
     QuickControls2
@@ -29,6 +30,10 @@ add_library(deye_core STATIC
     src/storage/SettingsStore.cpp
     src/viewmodel/StationListModel.h
     src/viewmodel/StationListModel.cpp
+    src/viewmodel/DeviceListModel.h
+    src/viewmodel/DeviceListModel.cpp
+    src/viewmodel/InverterSettingsController.h
+    src/viewmodel/InverterSettingsController.cpp
     src/viewmodel/AppController.h
     src/viewmodel/AppController.cpp
 )
@@ -61,11 +66,13 @@ qt_add_qml_module(deye-desktop
         qml/components/PowerFlowDiagram.qml
         qml/views/LoginView.qml
         qml/views/DashboardView.qml
+        qml/views/InverterSettingsDialog.qml
 )
 
 target_link_libraries(deye-desktop PRIVATE
     deye_core
     Qt6::Gui
+    Qt6::Widgets
     Qt6::Qml
     Qt6::Quick
     Qt6::QuickControls2

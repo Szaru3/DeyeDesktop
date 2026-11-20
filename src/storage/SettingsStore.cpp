@@ -29,8 +29,8 @@ SavedSettings SettingsStore::load() const
     }
 
     s.lastStationId = m_settings.value(QStringLiteral("dashboard/lastStationId"), 0).toLongLong();
-    s.refreshIntervalSec = std::clamp(m_settings.value(QStringLiteral("dashboard/refreshIntervalSec"), 60).toInt(), 15, 3600);
-    s.autoRefreshEnabled = m_settings.value(QStringLiteral("dashboard/autoRefreshEnabled"), true).toBool();
+    s.refreshIntervalSec = 120;
+    s.autoRefreshEnabled = true;
     return s;
 }
 

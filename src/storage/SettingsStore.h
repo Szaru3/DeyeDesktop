@@ -21,7 +21,7 @@ struct SavedSettings {
     QString password;
     bool rememberMe = true;
     qint64 lastStationId = 0;
-    int refreshIntervalSec = 60;
+    int refreshIntervalSec = 120;
     bool autoRefreshEnabled = true;
 };
 

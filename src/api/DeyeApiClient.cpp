@@ -1,5 +1,6 @@
 #include "DeyeApiClient.h"
 
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonParseError>
 #include <QNetworkReply>
@@ -205,6 +206,193 @@ void DeyeApiClient::fetchStationLatest(qint64 stationId)
         }
 
         emit stationLatestFetched(stationId, data);
+    });
+}
+
+void DeyeApiClient::fetchStationDevices(qint64 stationId, int page, int size)
+{
+    if (m_baseUrl.isEmpty() || m_accessToken.isEmpty()) {
+        emit requestFailed(QStringLiteral("devices"), QStringLiteral("Not authenticated."), true);
+        return;
+    }
+
+    const QUrl url(m_baseUrl + QStringLiteral("/v1.0/station/device"));
+    QJsonObject bodyObj;
+    QJsonArray ids;
+    ids.append(stationId);
+    bodyObj.insert(QStringLiteral("stationIds"), ids);
+    bodyObj.insert(QStringLiteral("page"), page);
+    bodyObj.insert(QStringLiteral("size"), size);
+
+    const QByteArray payload = QJsonDocument(bodyObj).toJson(QJsonDocument::Compact);
+    QNetworkReply *reply = m_network.post(buildRequest(url, true), payload);
+
+    connect(reply, &QNetworkReply::finished, this, [this, reply, stationId]() {
+        reply->deleteLater();
+        const int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        const QByteArray body = reply->readAll();
+
+        QJsonParseError parseErr{};
+        const QJsonDocument doc = QJsonDocument::fromJson(body, &parseErr);
+
+        if (reply->error() != QNetworkReply::NoError && (parseErr.error != QJsonParseError::NoError || !doc.isObject())) {
+            emit requestFailed(QStringLiteral("devices"),
+                               QStringLiteral("Failed to load devices (%1): %2").arg(httpStatus).arg(reply->errorString()),
+                               isAuthErrorCode({}, httpStatus));
+            return;
+        }
+
+        if (parseErr.error != QJsonParseError::NoError || !doc.isObject()) {
+            emit requestFailed(QStringLiteral("devices"),
+                               QStringLiteral("Invalid device list response."),
+                               false);
+            return;
+        }
+
+        const DeviceListResult result = DeviceListResult::fromJson(doc.object());
+        if (!result.success) {
+            const QString msg = result.message.isEmpty()
+                ? QStringLiteral("Failed to fetch devices (code %1).").arg(result.code)
+                : QStringLiteral("%1 (code %2)").arg(result.message, result.code);
+            emit requestFailed(QStringLiteral("devices"), msg, isAuthErrorCode(result.code, httpStatus));
+            return;
+        }
+
+        emit stationDevicesFetched(stationId, result.devices);
+    });
+}
+
+void DeyeApiClient::fetchSystemConfig(const QString &deviceSn)
+{
+    if (m_baseUrl.isEmpty() || m_accessToken.isEmpty()) {
+        emit requestFailed(QStringLiteral("config_system"), QStringLiteral("Not authenticated."), true);
+        return;
+    }
+
+    const QUrl url(m_baseUrl + QStringLiteral("/v1.0/config/system"));
+    QJsonObject bodyObj;
+    bodyObj.insert(QStringLiteral("deviceSn"), deviceSn);
+
+    QNetworkReply *reply = m_network.post(buildRequest(url, true), QJsonDocument(bodyObj).toJson(QJsonDocument::Compact));
+    connect(reply, &QNetworkReply::finished, this, [this, reply, deviceSn]() {
+        reply->deleteLater();
+        const int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        QJsonParseError parseErr{};
+        const QJsonDocument doc = QJsonDocument::fromJson(reply->readAll(), &parseErr);
+
+        if (parseErr.error != QJsonParseError::NoError || !doc.isObject()) {
+            emit requestFailed(QStringLiteral("config_system"),
+                               QStringLiteral("Failed to load system config (%1): %2").arg(httpStatus).arg(reply->errorString()),
+                               isAuthErrorCode({}, httpStatus));
+            return;
+        }
+        const InverterSystemConfig cfg = InverterSystemConfig::fromJson(doc.object());
+        if (!cfg.success) {
+            emit requestFailed(QStringLiteral("config_system"),
+                               cfg.message.isEmpty() ? QStringLiteral("System config error (code %1)").arg(cfg.code) : cfg.message,
+                               isAuthErrorCode(cfg.code, httpStatus));
+            return;
+        }
+        emit systemConfigFetched(deviceSn, cfg);
+    });
+}
+
+void DeyeApiClient::fetchBatteryConfig(const QString &deviceSn)
+{
+    if (m_baseUrl.isEmpty() || m_accessToken.isEmpty()) {
+        emit requestFailed(QStringLiteral("config_battery"), QStringLiteral("Not authenticated."), true);
+        return;
+    }
+
+    const QUrl url(m_baseUrl + QStringLiteral("/v1.0/config/battery"));
+    QJsonObject bodyObj;
+    bodyObj.insert(QStringLiteral("deviceSn"), deviceSn);
+
+    QNetworkReply *reply = m_network.post(buildRequest(url, true), QJsonDocument(bodyObj).toJson(QJsonDocument::Compact));
+    connect(reply, &QNetworkReply::finished, this, [this, reply, deviceSn]() {
+        reply->deleteLater();
+        const int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        QJsonParseError parseErr{};
+        const QJsonDocument doc = QJsonDocument::fromJson(reply->readAll(), &parseErr);
+
+        if (parseErr.error != QJsonParseError::NoError || !doc.isObject()) {
+            emit requestFailed(QStringLiteral("config_battery"),
+                               QStringLiteral("Failed to load battery config (%1): %2").arg(httpStatus).arg(reply->errorString()),
+                               isAuthErrorCode({}, httpStatus));
+            return;
+        }
+        const InverterBatteryConfig cfg = InverterBatteryConfig::fromJson(doc.object());
+        if (!cfg.success) {
+            emit requestFailed(QStringLiteral("config_battery"),
+                               cfg.message.isEmpty() ? QStringLiteral("Battery config error (code %1)").arg(cfg.code) : cfg.message,
+                               isAuthErrorCode(cfg.code, httpStatus));
+            return;
+        }
+        emit batteryConfigFetched(deviceSn, cfg);
+    });
+}
+
+void DeyeApiClient::fetchTouConfig(const QString &deviceSn)
+{
+    if (m_baseUrl.isEmpty() || m_accessToken.isEmpty()) {
+        emit requestFailed(QStringLiteral("config_tou"), QStringLiteral("Not authenticated."), true);
+        return;
+    }
+
+    const QUrl url(m_baseUrl + QStringLiteral("/v1.0/config/tou"));
+    QJsonObject bodyObj;
+    bodyObj.insert(QStringLiteral("deviceSn"), deviceSn);
+
+    QNetworkReply *reply = m_network.post(buildRequest(url, true), QJsonDocument(bodyObj).toJson(QJsonDocument::Compact));
+    connect(reply, &QNetworkReply::finished, this, [this, reply, deviceSn]() {
+        reply->deleteLater();
+        const int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        QJsonParseError parseErr{};
+        const QJsonDocument doc = QJsonDocument::fromJson(reply->readAll(), &parseErr);
+
+        if (parseErr.error != QJsonParseError::NoError || !doc.isObject()) {
+            emit requestFailed(QStringLiteral("config_tou"),
+                               QStringLiteral("Failed to load TOU config (%1): %2").arg(httpStatus).arg(reply->errorString()),
+                               isAuthErrorCode({}, httpStatus));
+            return;
+        }
+        const InverterTouConfig cfg = InverterTouConfig::fromJson(doc.object());
+        if (!cfg.success) {
+            emit requestFailed(QStringLiteral("config_tou"),
+                               cfg.message.isEmpty() ? QStringLiteral("TOU config error (code %1)").arg(cfg.code) : cfg.message,
+                               isAuthErrorCode(cfg.code, httpStatus));
+            return;
+        }
+        emit touConfigFetched(deviceSn, cfg);
+    });
+}
+
+void DeyeApiClient::sendOrder(const QString &endpointPath, const QJsonObject &payload, const QString &description)
+{
+    if (m_baseUrl.isEmpty() || m_accessToken.isEmpty()) {
+        emit requestFailed(QStringLiteral("order"), QStringLiteral("Not authenticated."), true);
+        return;
+    }
+
+    const QUrl url(m_baseUrl + endpointPath);
+    QNetworkReply *reply = m_network.post(buildRequest(url, true), QJsonDocument(payload).toJson(QJsonDocument::Compact));
+
+    connect(reply, &QNetworkReply::finished, this, [this, reply, description]() {
+        reply->deleteLater();
+        const int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        QJsonParseError parseErr{};
+        const QJsonDocument doc = QJsonDocument::fromJson(reply->readAll(), &parseErr);
+
+        if (parseErr.error != QJsonParseError::NoError || !doc.isObject()) {
+            OrderResult err;
+            err.success = false;
+            err.message = QStringLiteral("Network error (%1): %2").arg(httpStatus).arg(reply->errorString());
+            emit orderCompleted(description, err);
+            return;
+        }
+
+        const OrderResult res = OrderResult::fromJson(doc.object());
+        emit orderCompleted(description, res);
     });
 }
 

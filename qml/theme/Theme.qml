@@ -2,43 +2,47 @@ pragma Singleton
 import QtQuick
 
 QtObject {
-    // Authentic Libadwaita Dark Palette (GNOME HIG)
-    readonly property color bgPrimary: "#242424"        // --window-bg-color
-    readonly property color bgHeader: "#303030"         // --headerbar-bg-color
-    readonly property color bgSurface: "#303030"        // --card-bg-color / boxed-list
-    readonly property color bgElevated: "#383838"       // popover / hover surface
-    readonly property color bgInput: "#1E1E1E"          // --view-bg-color
-    readonly property color bgButton: "#3A3A3A"
-    readonly property color bgButtonHover: "#454545"
-    readonly property color border: "#3F3F3F"           // subtle hairline border
-    readonly property color separator: "#3B3B3B"
-    readonly property color borderFocus: "#3584E4"      // --accent-bg-color
+    id: root
 
-    readonly property color textPrimary: "#FFFFFF"
-    readonly property color textSecondary: "#B8B8B8"
-    readonly property color textMuted: "#8C8C8C"
+    property SystemPalette palette: SystemPalette {
+        colorGroup: SystemPalette.Active
+    }
 
-    // Libadwaita Semantic Accents
-    readonly property color accent: "#3584E4"           // Adwaita Blue 3 (suggested-action)
-    readonly property color accentHover: "#4A94EB"
-    readonly property color accentText: "#78AEED"
-    readonly property color success: "#33D17A"          // Adwaita Green 3
-    readonly property color warning: "#F5C211"          // Adwaita Yellow 4
-    readonly property color error: "#E01B24"            // Adwaita Red 3 (destructive)
-    readonly property color errorText: "#FF7B63"
-    readonly property color errorSoft: "#3A2224"
+    readonly property bool isDark: (palette.window.r * 0.299 + palette.window.g * 0.587 + palette.window.b * 0.114) < 0.5
 
-    // Energy Domain Accents (harmonized with Adwaita palette)
-    readonly property color solar: "#F5C211"
-    readonly property color solarSoft: "#353020"
-    readonly property color battery: "#33D17A"
-    readonly property color batterySoft: "#223329"
-    readonly property color grid: "#62A0EA"
-    readonly property color gridSoft: "#232D3B"
-    readonly property color load: "#C061CB"
-    readonly property color loadSoft: "#322536"
+    // System-integrated surfaces & text (follows KDE / Windows color scheme)
+    readonly property color bgPrimary: palette.window
+    readonly property color bgHeader: palette.window
+    readonly property color bgSurface: isDark ? Qt.lighter(palette.window, 1.18) : palette.base
+    readonly property color bgElevated: isDark ? Qt.lighter(palette.window, 1.32) : palette.alternateBase
+    readonly property color bgInput: palette.base
+    readonly property color border: Qt.rgba(palette.windowText.r, palette.windowText.g, palette.windowText.b, isDark ? 0.14 : 0.16)
+    readonly property color separator: Qt.rgba(palette.windowText.r, palette.windowText.g, palette.windowText.b, isDark ? 0.10 : 0.12)
 
-    // Spacing & Radii (Adwaita HIG)
+    readonly property color textPrimary: palette.windowText
+    readonly property color textSecondary: Qt.rgba(palette.windowText.r, palette.windowText.g, palette.windowText.b, 0.72)
+    readonly property color textMuted: Qt.rgba(palette.windowText.r, palette.windowText.g, palette.windowText.b, 0.52)
+
+    // System Accent & Semantic Colors
+    readonly property color accent: palette.highlight
+    readonly property color accentText: palette.highlightedText
+    readonly property color success: isDark ? "#33D17A" : "#1E8E4F"
+    readonly property color warning: isDark ? "#F5C211" : "#B57B00"
+    readonly property color error: isDark ? "#E01B24" : "#C01C28"
+    readonly property color errorText: isDark ? "#FF7B63" : "#A51D2D"
+    readonly property color errorSoft: Qt.rgba(error.r, error.g, error.b, isDark ? 0.18 : 0.10)
+
+    // Energy Domain Accents
+    readonly property color solar: isDark ? "#F5C211" : "#D48806"
+    readonly property color solarSoft: Qt.rgba(solar.r, solar.g, solar.b, isDark ? 0.16 : 0.12)
+    readonly property color battery: isDark ? "#33D17A" : "#1E8E4F"
+    readonly property color batterySoft: Qt.rgba(battery.r, battery.g, battery.b, isDark ? 0.16 : 0.12)
+    readonly property color grid: isDark ? "#62A0EA" : "#1C71D8"
+    readonly property color gridSoft: Qt.rgba(grid.r, grid.g, grid.b, isDark ? 0.16 : 0.12)
+    readonly property color load: isDark ? "#C061CB" : "#813D9C"
+    readonly property color loadSoft: Qt.rgba(load.r, load.g, load.b, isDark ? 0.16 : 0.12)
+
+    // Spacing & Radii
     readonly property int radiusSm: 6
     readonly property int radiusMd: 9
     readonly property int radiusLg: 12

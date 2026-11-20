@@ -7,6 +7,7 @@ namespace deye {
 
 AppController::AppController(QObject *parent)
     : QObject(parent)
+    , m_inverterSettings(&m_apiClient, this)
     , m_regions(defaultRegions())
 {
     for (const DeyeRegion &region : m_regions) {
@@ -14,8 +15,8 @@ AppController::AppController(QObject *parent)
     }
 
     m_saved = m_settingsStore.load();
-    m_autoRefreshEnabled = m_saved.autoRefreshEnabled;
-    m_refreshIntervalSec = m_saved.refreshIntervalSec;
+    m_autoRefreshEnabled = true;
+    m_refreshIntervalSec = 120;
 
     m_refreshTimer.setInterval(m_refreshIntervalSec * 1000);
     connect(&m_refreshTimer, &QTimer::timeout, this, &AppController::refreshDashboard);
@@ -23,6 +24,7 @@ AppController::AppController(QObject *parent)
     connect(&m_apiClient, &DeyeApiClient::authenticated, this, &AppController::onAuthenticated);
     connect(&m_apiClient, &DeyeApiClient::stationsFetched, this, &AppController::onStationsFetched);
     connect(&m_apiClient, &DeyeApiClient::stationLatestFetched, this, &AppController::onStationLatestFetched);
+    connect(&m_apiClient, &DeyeApiClient::stationDevicesFetched, this, &AppController::onStationDevicesFetched);
     connect(&m_apiClient, &DeyeApiClient::requestFailed, this, &AppController::onRequestFailed);
 }
 
@@ -171,6 +173,8 @@ void AppController::logout()
     m_refreshTimer.stop();
     m_apiClient.clearSession();
     m_stationModel.clear();
+    m_deviceModel.clear();
+    emit devicesChanged();
 
     m_loggedIn = false;
     m_demoMode = false;
@@ -213,6 +217,11 @@ void AppController::selectStationByIndex(int index)
     updateTimerState();
 }
 
+void AppController::openInverterSettings(const QString &deviceSn, const QString &deviceName)
+{
+    m_inverterSettings.openForDevice(deviceSn, deviceName, m_demoMode);
+}
+
 void AppController::refreshStations()
 {
     if (!m_loggedIn) {
@@ -234,10 +243,12 @@ void AppController::refreshDashboard()
     }
     if (m_demoMode) {
         applyDemoTelemetry(m_selectedStationId);
+        applyDemoDevices(m_selectedStationId);
         return;
     }
     setBusy(true);
     m_apiClient.fetchStationLatest(m_selectedStationId);
+    m_apiClient.fetchStationDevices(m_selectedStationId);
 }
 
 QString AppController::formatPower(double watts) const
@@ -274,6 +285,33 @@ void AppController::applyDemoTelemetry(qint64 stationId)
     }
 
     applyTelemetry(d);
+}
+
+void AppController::applyDemoDevices(qint64 stationId)
+{
+    const qint64 now = QDateTime::currentSecsSinceEpoch();
+    QVector<DeviceInfo> list;
+
+    if (stationId == 100001) {
+        list.push_back({900101, QStringLiteral("2309184421"), QStringLiteral("Main Hybrid Inverter"), QStringLiteral("Inverter"), QStringLiteral("SUN-10K-SG04LP3-EU"), QStringLiteral("NORMAL"), now});
+        list.push_back({900102, QStringLiteral("4102883910"), QStringLiteral("Wi-Fi Solarman Logger"), QStringLiteral("Data Logger"), QStringLiteral("LSW-3"), QStringLiteral("NORMAL"), now});
+        list.push_back({900103, QStringLiteral("B240119008"), QStringLiteral("LiFePO4 Battery Stack 15kWh"), QStringLiteral("Battery"), QStringLiteral("SE-G5.1 Pro-B"), QStringLiteral("NORMAL"), now});
+    } else {
+        list.push_back({900201, QStringLiteral("2207119034"), QStringLiteral("Cabin Inverter"), QStringLiteral("Inverter"), QStringLiteral("SUN-6K-SG04LP3-EU"), QStringLiteral("NORMAL"), now});
+        list.push_back({900202, QStringLiteral("4091726355"), QStringLiteral("Wi-Fi Logger"), QStringLiteral("Data Logger"), QStringLiteral("LSW-3"), QStringLiteral("NORMAL"), now});
+    }
+
+    m_deviceModel.setDevices(list);
+    emit devicesChanged();
+}
+
+void AppController::onStationDevicesFetched(qint64 stationId, const QVector<DeviceInfo> &devices)
+{
+    if (stationId != m_selectedStationId) {
+        return;
+    }
+    m_deviceModel.setDevices(devices);
+    emit devicesChanged();
 }
 
 void AppController::applyTelemetry(const StationLatestData &data)
@@ -341,12 +379,20 @@ void AppController::onStationLatestFetched(qint64 stationId, const StationLatest
 
 void AppController::onRequestFailed(const QString &context, const QString &message, bool authExpired)
 {
-    setBusy(false);
     if (authExpired && m_loggedIn) {
+        setBusy(false);
         logout();
         setErrorMessage(QStringLiteral("Session expired. Please sign in again. (%1)").arg(message));
         return;
     }
+    // Inverter settings dialog handles its own config/order errors
+    if (context == QStringLiteral("config_system")
+        || context == QStringLiteral("config_battery")
+        || context == QStringLiteral("config_tou")
+        || context == QStringLiteral("order")) {
+        return;
+    }
+    setBusy(false);
     if (context == QStringLiteral("auth")) {
         setErrorMessage(message);
     } else {

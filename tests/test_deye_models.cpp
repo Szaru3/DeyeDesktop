@@ -189,6 +189,118 @@ private slots:
         QCOMPARE(data.gridPowerW, 54.0);
         QCOMPARE(data.lastUpdateTime, 1737070476LL);
     }
+
+    void parseStationDevices()
+    {
+        const QByteArray json = R"({
+            "code": "1000000",
+            "msg": "success",
+            "success": true,
+            "total": 2,
+            "deviceListItems": [
+                {
+                    "deviceId": 98765432,
+                    "deviceSn": "2212228299",
+                    "deviceName": "Inverter 1",
+                    "deviceType": "INVERTER",
+                    "productId": "SUN-10K-SG04LP3-EU",
+                    "connectStatus": 1,
+                    "collectionTime": 1718012400000
+                },
+                {
+                    "deviceId": 98765433,
+                    "deviceSn": "4100998877",
+                    "deviceType": 2,
+                    "connectStatus": 0,
+                    "collectionTime": 1718012400
+                }
+            ]
+        })";
+
+        const auto res = DeviceListResult::fromJson(QJsonDocument::fromJson(json).object());
+        QVERIFY(res.success);
+        QCOMPARE(res.total, 2);
+        QCOMPARE(res.devices.size(), 2);
+        QCOMPARE(res.devices[0].deviceSn, QStringLiteral("2212228299"));
+        QCOMPARE(res.devices[0].deviceName, QStringLiteral("Inverter 1"));
+        QCOMPARE(res.devices[0].deviceType, QStringLiteral("Inverter"));
+        QCOMPARE(res.devices[0].connectionStatus, QStringLiteral("NORMAL"));
+        QCOMPARE(res.devices[0].collectionTime, 1718012400LL);
+        QCOMPARE(res.devices[1].deviceType, QStringLiteral("Data Logger"));
+        QCOMPARE(res.devices[1].connectionStatus, QStringLiteral("ALL_OFFLINE"));
+    }
+
+    void parseInverterConfigsAndOrder()
+    {
+        const QByteArray sysJson = R"({
+            "code": "1000000",
+            "success": true,
+            "data": {
+                "workMode": "ZERO_EXPORT_TO_CT",
+                "energyPattern": "BATTERY_FIRST",
+                "solarSell": true,
+                "limitControl": "ZERO_EXPORT_TO_CT",
+                "maxSellPower": 8000,
+                "maxSolarPower": 10000,
+                "gridPeakShaving": true,
+                "gridPeakShavingPower": 4500
+            }
+        })";
+        const auto sys = InverterSystemConfig::fromJson(QJsonDocument::fromJson(sysJson).object());
+        QVERIFY(sys.success);
+        QCOMPARE(sys.workMode, QStringLiteral("ZERO_EXPORT_TO_CT"));
+        QCOMPARE(sys.energyPattern, QStringLiteral("BATTERY_FIRST"));
+        QVERIFY(sys.solarSell);
+        QCOMPARE(sys.maxSellPower, 8000);
+        QCOMPARE(sys.gridPeakShavingPower, 4500);
+
+        const QByteArray battJson = R"({
+            "code": "1000000",
+            "success": true,
+            "data": {
+                "batteryType": "LITHIUM",
+                "gridCharge": true,
+                "maxChargeCurrent": 80,
+                "maxDischargeCurrent": 100,
+                "shutdownSOC": 10,
+                "floatV": 55.2
+            }
+        })";
+        const auto batt = InverterBatteryConfig::fromJson(QJsonDocument::fromJson(battJson).object());
+        QVERIFY(batt.success);
+        QCOMPARE(batt.batteryType, QStringLiteral("LITHIUM"));
+        QVERIFY(batt.gridChargeEnabled);
+        QCOMPARE(batt.maxChargeCurrent, 80);
+        QCOMPARE(batt.shutdownSoc, 10);
+        QCOMPARE(batt.floatV, 55.2);
+
+        const QByteArray touJson = R"({
+            "code": "1000000",
+            "success": true,
+            "data": {
+                "touAction": "on",
+                "timeUseSettingItems": [
+                    {"time": 0, "soc": 80, "power": 5000, "voltage": 0, "enableGridCharge": true, "enableGeneration": false},
+                    {"time": 530, "soc": 50, "power": 5000, "voltage": 0, "enableGridCharge": false, "enableGeneration": false},
+                    {"time": "1400", "soc": 90, "power": 6000, "voltage": 0, "enableGridCharge": false, "enableGeneration": false}
+                ]
+            }
+        })";
+        const auto tou = InverterTouConfig::fromJson(QJsonDocument::fromJson(touJson).object());
+        QVERIFY(tou.success);
+        QVERIFY(tou.enabled);
+        QCOMPARE(tou.slotsList.size(), 3);
+        QCOMPARE(tou.slotsList[0].time, QStringLiteral("00:00"));
+        QCOMPARE(tou.slotsList[1].time, QStringLiteral("05:30"));
+        QCOMPARE(tou.slotsList[2].time, QStringLiteral("14:00"));
+        QCOMPARE(tou.slotsList[0].soc, 80);
+        QVERIFY(tou.slotsList[0].enableGridCharge);
+
+        const QByteArray orderJson = R"({"code": "1000000", "success": true, "orderId": "ord_9981"})";
+        const auto ord = OrderResult::fromJson(QJsonDocument::fromJson(orderJson).object());
+        QVERIFY(ord.success);
+        QCOMPARE(ord.orderId, QStringLiteral("ord_9981"));
+    }
 };
 
 QTEST_MAIN(TestDeyeModels)

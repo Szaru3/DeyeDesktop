@@ -7,6 +7,7 @@ Rectangle {
 
     property string title: ""
     property string valueText: "0 W"
+    property string inlineSubtitle: ""
     property string subtitle: ""
     property color accentColor: Theme.accent
     property bool showProgress: false
@@ -52,18 +53,33 @@ Rectangle {
             }
         }
 
-        Text {
-            text: root.valueText
-            color: Theme.textPrimary
-            font.pixelSize: 26
-            font.weight: Font.Bold
+        RowLayout {
             Layout.fillWidth: true
-            elide: Text.ElideRight
+            spacing: 8
+
+            Text {
+                text: root.valueText
+                color: Theme.textPrimary
+                font.pixelSize: 26
+                font.weight: Font.Bold
+                Layout.alignment: Qt.AlignBaseline
+            }
+
+            Text {
+                visible: root.inlineSubtitle.length > 0
+                text: root.inlineSubtitle
+                color: Theme.textSecondary
+                font.pixelSize: 12
+                font.weight: Font.Medium
+                elide: Text.ElideRight
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignBaseline
+            }
         }
 
         Item { Layout.fillHeight: true }
 
-        // Adwaita-style level bar for Battery SOC
+        // Level bar for Battery SOC
         Rectangle {
             visible: root.showProgress
             Layout.fillWidth: true
@@ -84,6 +100,7 @@ Rectangle {
         }
 
         Text {
+            visible: root.subtitle.length > 0
             text: root.subtitle
             color: Theme.textMuted
             font.pixelSize: 12
