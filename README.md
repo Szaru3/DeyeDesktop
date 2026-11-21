@@ -8,6 +8,10 @@
   A fast, cross-platform desktop client for the <strong>Deye Cloud OpenAPI v1.0</strong>, built with <strong>C++20</strong>, <strong>Qt 6 (Qt Quick / QML)</strong>, and <strong>CMake</strong>.
 </p>
 
+<p align="center">
+  <img src="assets/screenshot.png" alt="DeyeDesktop dashboard screenshot" width="840" />
+</p>
+
 ## Features
 
 - **Native Desktop Integration:** Automatically follows your system theme and accent color (`org.kde.desktop` on KDE Plasma, `FluentWinUI3` on Windows, `Fusion` fallback elsewhere).
