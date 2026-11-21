@@ -41,7 +41,7 @@ sudo pacman -S --needed qqc2-desktop-style
 
 Build and run:
 ```bash
-git clone <your-repo-url> DeyeDesktop
+git clone https://github.com/Szaru3/DeyeDesktop.git DeyeDesktop
 cd DeyeDesktop
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
@@ -61,7 +61,7 @@ sudo dnf install kf6-qqc2-desktop-style
 
 Build and run:
 ```bash
-git clone <your-repo-url> DeyeDesktop
+git clone https://github.com/Szaru3/DeyeDesktop.git DeyeDesktop
 cd DeyeDesktop
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
@@ -87,7 +87,7 @@ sudo apt install qml6-module-org-kde-desktop
 
 Build and run:
 ```bash
-git clone <your-repo-url> DeyeDesktop
+git clone https://github.com/Szaru3/DeyeDesktop.git DeyeDesktop
 cd DeyeDesktop
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
@@ -105,7 +105,7 @@ cmake --build build
 
 2. **Configure & Build** (from a *Developer PowerShell for VS 2022* or Qt MinGW terminal):
    ```powershell
-   git clone <your-repo-url> DeyeDesktop
+   git clone https://github.com/Szaru3/DeyeDesktop.git DeyeDesktop
    cd DeyeDesktop
    cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="C:\Qt\6.8.0\msvc2022_64"
    cmake --build build
