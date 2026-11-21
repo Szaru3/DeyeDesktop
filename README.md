@@ -1,6 +1,12 @@
-# DeyeDesktop
+<p align="center">
+  <img src="assets/icon.svg" width="72" height="72" alt="DeyeDesktop icon" />
+</p>
 
-A fast, cross-platform desktop client for the **Deye Cloud OpenAPI v1.0**, built with **C++20**, **Qt 6 (Qt Quick / QML)**, and **CMake**.
+<h1 align="center">DeyeDesktop</h1>
+
+<p align="center">
+  A fast, cross-platform desktop client for the <strong>Deye Cloud OpenAPI v1.0</strong>, built with <strong>C++20</strong>, <strong>Qt 6 (Qt Quick / QML)</strong>, and <strong>CMake</strong>.
+</p>
 
 ## Features
 
@@ -30,6 +36,8 @@ To connect to your real installation, you need an `App ID` and `App Secret`:
 
 ## Building & Installing
 
+> On Linux, `cmake --install` installs `deye-desktop`, its `.desktop` launcher entry (`applications/deye-desktop.desktop`), and hicolor icons (`scalable` SVG + `256x256` PNG), and refreshes the desktop/icon caches automatically so DeyeDesktop appears in your KDE/GNOME application menu.
+
 ### Arch Linux
 
 Install dependencies:
@@ -39,13 +47,18 @@ sudo pacman -S --needed base-devel cmake ninja qt6-base qt6-declarative qt6-5com
 sudo pacman -S --needed qqc2-desktop-style
 ```
 
-Build and run:
+Build and install:
 ```bash
 git clone https://github.com/Szaru3/DeyeDesktop.git DeyeDesktop
 cd DeyeDesktop
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
-./build/deye-desktop
+
+# System-wide install (binary + desktop entry + icon):
+sudo cmake --install build
+
+# Or user-local install (no sudo required):
+cmake --install build --prefix ~/.local
 ```
 
 ---
@@ -59,13 +72,18 @@ sudo dnf install gcc-c++ cmake ninja-build qt6-qtbase-devel qt6-qtdeclarative-de
 sudo dnf install kf6-qqc2-desktop-style
 ```
 
-Build and run:
+Build and install:
 ```bash
 git clone https://github.com/Szaru3/DeyeDesktop.git DeyeDesktop
 cd DeyeDesktop
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
-./build/deye-desktop
+
+# System-wide install (binary + desktop entry + icon):
+sudo cmake --install build
+
+# Or user-local install (no sudo required):
+cmake --install build --prefix ~/.local
 ```
 
 ---
@@ -85,13 +103,18 @@ sudo apt install build-essential cmake ninja-build \
 sudo apt install qml6-module-org-kde-desktop
 ```
 
-Build and run:
+Build and install:
 ```bash
 git clone https://github.com/Szaru3/DeyeDesktop.git DeyeDesktop
 cd DeyeDesktop
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
-./build/deye-desktop
+
+# System-wide install (binary + desktop entry + icon):
+sudo cmake --install build
+
+# Or user-local install (no sudo required):
+cmake --install build --prefix ~/.local
 ```
 
 ---

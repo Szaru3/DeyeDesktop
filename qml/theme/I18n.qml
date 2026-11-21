@@ -33,7 +33,7 @@ QtObject {
         "Overview": "Przegląd",
         "Devices": "Urządzenia",
         "Alerts": "Alerty",
-        "Plant Info": "Informacje o instalacji",
+        "Plant Info": "Informacje",
         "Sign Out": "Wyloguj",
         "Dismiss": "Zamknij",
         "Updated": "Zaktualizowano",

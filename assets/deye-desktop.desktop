@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=DeyeDesktop
+GenericName=Solar Inverter Monitor
+GenericName[pl]=Monitor falowników solarnych
+Comment=Monitor and configure Deye solar inverters via Deye Cloud
+Comment[pl]=Monitoruj i konfiguruj falowniki Deye przez Deye Cloud
+Exec=deye-desktop
+Icon=deye-desktop
+Terminal=false
+Categories=Utility;Monitor;Qt;
+Keywords=Deye;Solar;Inverter;PV;Battery;Energy;Fotowoltaika;Falownik;
+StartupWMClass=deye-desktop

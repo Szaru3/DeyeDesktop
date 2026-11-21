@@ -91,21 +91,14 @@ Rectangle {
                 Layout.fillWidth: true
                 spacing: 6
 
-                Rectangle {
+                Image {
                     Layout.alignment: Qt.AlignHCenter
-                    width: 48
-                    height: 48
-                    radius: 14
-                    color: Theme.solarSoft
-                    border.color: Qt.rgba(Theme.solar.r, Theme.solar.g, Theme.solar.b, 0.5)
-                    border.width: 1
-
-                    Label {
-                        anchors.centerIn: parent
-                        text: "☀"
-                        color: Theme.solar
-                        font.pixelSize: 22
-                    }
+                    source: "qrc:/qt/qml/DeyeDesktop/assets/icon.png"
+                    Layout.preferredWidth: 56
+                    Layout.preferredHeight: 56
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+                    mipmap: true
                 }
 
                 Label {

@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    
+    <linearGradient id="frameGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#E2E8F0" />
+      <stop offset="50%" stop-color="#94A3B8" />
+      <stop offset="100%" stop-color="#64748B" />
+    </linearGradient>
+
+    
+    <linearGradient id="cellGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B5BFD" />
+      <stop offset="50%" stop-color="#2541E5" />
+      <stop offset="100%" stop-color="#172BB8" />
+    </linearGradient>
+
+    
+    <linearGradient id="glassGlare" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.22" />
+      <stop offset="45%" stop-color="#FFFFFF" stop-opacity="0.04" />
+      <stop offset="55%" stop-color="#FFFFFF" stop-opacity="0.0" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.08" />
+    </linearGradient>
+
+    
+    <filter id="dropShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0F172A" flood-opacity="0.2" />
+    </filter>
+
+    
+    <clipPath id="panelClip">
+      <rect x="56" y="56" width="400" height="400" rx="84" ry="84" />
+    </clipPath>
+  </defs>
+
+  
+  <rect x="40" y="40" width="432" height="432" rx="100" ry="100" fill="url(#frameGrad)" filter="url(#dropShadow)" />
+  
+  
+  <rect x="52" y="52" width="408" height="408" rx="88" ry="88" fill="#1E293B" />
+
+  
+  <g clip-path="url(#panelClip)">
+    
+    <rect x="56" y="56" width="400" height="400" fill="url(#cellGrad)" />
+
+    
+    
+    <g stroke="#FFFFFF" stroke-width="4" stroke-opacity="0.95">
+      <line x1="156" y1="56" x2="156" y2="456" />
+      <line x1="256" y1="56" x2="256" y2="456" />
+      <line x1="356" y1="56" x2="356" y2="456" />
+    </g>
+
+    
+    <g stroke="#FFFFFF" stroke-width="4" stroke-opacity="0.95">
+      <line x1="56" y1="156" x2="456" y2="156" />
+      <line x1="56" y1="256" x2="456" y2="256" />
+      <line x1="56" y1="356" x2="456" y2="356" />
+    </g>
+
+    
+    <g fill="#FFFFFF">
+      
+      <polygon points="156,141 171,156 156,171 141,156" />
+      <polygon points="256,141 271,156 256,171 241,156" />
+      <polygon points="356,141 371,156 356,171 341,156" />
+
+      
+      <polygon points="156,241 171,256 156,271 141,256" />
+      <polygon points="256,241 271,256 256,271 241,256" />
+      <polygon points="356,241 371,256 356,271 341,256" />
+
+      
+      <polygon points="156,341 171,356 156,371 141,356" />
+      <polygon points="256,341 271,356 256,371 241,356" />
+      <polygon points="356,341 371,356 356,371 341,356" />
+    </g>
+
+    
+    <rect x="56" y="56" width="400" height="400" fill="url(#glassGlare)" />
+  </g>
+</svg>
