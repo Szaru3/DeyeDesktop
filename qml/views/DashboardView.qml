@@ -683,81 +683,333 @@ Rectangle {
                 }
 
                 // ===================== SECTION 3: PLANT INFO =====================
-                Rectangle {
+                ColumnLayout {
                     visible: root.currentSection === 3
                     Layout.fillWidth: true
-                    implicitHeight: plantInfoCol.implicitHeight
-                    radius: Theme.radiusLg
-                    color: Theme.bgSurface
-                    border.color: Theme.border
-                    border.width: 1
+                    spacing: Theme.spacingLg
 
-                    component InfoRow: ColumnLayout {
-                        property string label: ""
-                        property string value: ""
-                        property bool showSeparator: true
+                    Rectangle {
                         Layout.fillWidth: true
-                        spacing: 0
+                        implicitHeight: plantInfoCol.implicitHeight
+                        radius: Theme.radiusLg
+                        color: Theme.bgSurface
+                        border.color: Theme.border
+                        border.width: 1
 
-                        RowLayout {
+                        component InfoRow: ColumnLayout {
+                            property string label: ""
+                            property string value: ""
+                            property bool showSeparator: true
                             Layout.fillWidth: true
-                            Layout.margins: Theme.rowPadding
-                            spacing: Theme.spacingMd
-                            Label {
-                                text: label
-                                color: Theme.textSecondary
-                                Layout.preferredWidth: 180
-                            }
-                            Label {
-                                text: value
-                                font.weight: Font.Medium
+                            spacing: 0
+
+                            RowLayout {
                                 Layout.fillWidth: true
-                                wrapMode: Text.WordWrap
+                                Layout.margins: Theme.rowPadding
+                                spacing: Theme.spacingMd
+                                Label {
+                                    text: label
+                                    color: Theme.textSecondary
+                                    Layout.preferredWidth: 180
+                                }
+                                Label {
+                                    text: value
+                                    font.weight: Font.Medium
+                                    Layout.fillWidth: true
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+
+                            Rectangle {
+                                visible: showSeparator
+                                Layout.fillWidth: true
+                                height: 1
+                                color: Theme.separator
                             }
                         }
 
-                        Rectangle {
-                            visible: showSeparator
-                            Layout.fillWidth: true
-                            height: 1
-                            color: Theme.separator
+                        ColumnLayout {
+                            id: plantInfoCol
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            spacing: 0
+
+                            InfoRow {
+                                label: I18n.t("Plant Name")
+                                value: appController.selectedStationName || "—"
+                            }
+                            InfoRow {
+                                label: I18n.t("Plant ID")
+                                value: appController.selectedStationId > 0 ? String(appController.selectedStationId) : "—"
+                            }
+                            InfoRow {
+                                label: I18n.t("Address")
+                                value: appController.selectedStationLocation || I18n.t("Not specified")
+                            }
+                            InfoRow {
+                                label: I18n.t("Installed Capacity")
+                                value: appController.installedCapacityKw > 0
+                                       ? (appController.installedCapacityKw.toFixed(2) + " kWp")
+                                       : "—"
+                            }
+                            InfoRow {
+                                label: I18n.t("Connection Status")
+                                value: appController.connectionStatus
+                            }
+                            InfoRow {
+                                label: I18n.t("Last Update")
+                                value: appController.lastUpdateText
+                                showSeparator: false
+                            }
                         }
                     }
 
-                    ColumnLayout {
-                        id: plantInfoCol
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        spacing: 0
+                    component TempTableCard: Rectangle {
+                        id: tempCard
+                        property string title: ""
+                        property string emptyText: ""
+                        property var rows: []
 
-                        InfoRow {
-                            label: I18n.t("Plant Name")
-                            value: appController.selectedStationName || "—"
+                        Layout.fillWidth: true
+                        implicitHeight: tempCardCol.implicitHeight
+                        radius: Theme.radiusLg
+                        color: Theme.bgSurface
+                        border.color: Theme.border
+                        border.width: 1
+                        clip: true
+
+                        ColumnLayout {
+                            id: tempCardCol
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            spacing: 0
+
+                            // Card Header
+                            RowLayout {
+                                Layout.fillWidth: true
+                                Layout.margins: Theme.cardPadding
+                                spacing: Theme.spacingSm
+
+                                Label {
+                                    text: tempCard.title
+                                    font.pixelSize: 15
+                                    font.weight: Font.DemiBold
+                                    Layout.fillWidth: true
+                                }
+
+                                Label {
+                                    visible: tempCard.rows.length > 0
+                                    text: tempCard.rows.length + " " + I18n.t("sensors")
+                                    color: Theme.textMuted
+                                    font.pixelSize: 12
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                height: 1
+                                color: Theme.separator
+                            }
+
+                            // Empty State
+                            ColumnLayout {
+                                visible: tempCard.rows.length === 0
+                                Layout.fillWidth: true
+                                Layout.margins: 24
+                                spacing: 4
+
+                                Label {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    text: tempCard.emptyText
+                                    color: Theme.textSecondary
+                                    font.pixelSize: 13
+                                }
+                            }
+
+                            // Table Header Row
+                            Rectangle {
+                                visible: tempCard.rows.length > 0
+                                Layout.fillWidth: true
+                                implicitHeight: 36
+                                color: Theme.bgElevated
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: Theme.rowPadding
+                                    anchors.rightMargin: Theme.rowPadding
+                                    spacing: Theme.spacingMd
+
+                                    Label {
+                                        text: I18n.t("Device")
+                                        color: Theme.textSecondary
+                                        font.pixelSize: 12
+                                        font.weight: Font.DemiBold
+                                        Layout.fillWidth: true
+                                        Layout.preferredWidth: 200
+                                    }
+                                    Label {
+                                        text: I18n.t("Sensor")
+                                        color: Theme.textSecondary
+                                        font.pixelSize: 12
+                                        font.weight: Font.DemiBold
+                                        Layout.fillWidth: true
+                                        Layout.preferredWidth: 180
+                                    }
+                                    Label {
+                                        text: I18n.t("Temperature")
+                                        color: Theme.textSecondary
+                                        font.pixelSize: 12
+                                        font.weight: Font.DemiBold
+                                        Layout.preferredWidth: 100
+                                        horizontalAlignment: Text.AlignRight
+                                    }
+                                    Label {
+                                        text: I18n.t("Status")
+                                        color: Theme.textSecondary
+                                        font.pixelSize: 12
+                                        font.weight: Font.DemiBold
+                                        Layout.preferredWidth: 84
+                                        horizontalAlignment: Text.AlignHCenter
+                                    }
+                                    Label {
+                                        text: I18n.t("Updated")
+                                        color: Theme.textSecondary
+                                        font.pixelSize: 12
+                                        font.weight: Font.DemiBold
+                                        Layout.preferredWidth: 74
+                                        horizontalAlignment: Text.AlignRight
+                                    }
+                                }
+
+                                Rectangle {
+                                    anchors.bottom: parent.bottom
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    height: 1
+                                    color: Theme.separator
+                                }
+                            }
+
+                            // Table Data Rows
+                            Repeater {
+                                model: tempCard.rows
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 0
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Layout.leftMargin: Theme.rowPadding
+                                        Layout.rightMargin: Theme.rowPadding
+                                        Layout.topMargin: 10
+                                        Layout.bottomMargin: 10
+                                        spacing: Theme.spacingMd
+
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            Layout.preferredWidth: 200
+                                            spacing: 1
+
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: modelData.deviceName
+                                                font.pixelSize: 13
+                                                font.weight: Font.Medium
+                                                elide: Text.ElideRight
+                                            }
+                                            Label {
+                                                Layout.fillWidth: true
+                                                visible: modelData.deviceSn.length > 0 && modelData.deviceSn !== modelData.deviceName
+                                                text: "SN: " + modelData.deviceSn
+                                                color: Theme.textMuted
+                                                font.pixelSize: 11
+                                                elide: Text.ElideRight
+                                            }
+                                        }
+
+                                        Label {
+                                            Layout.fillWidth: true
+                                            Layout.preferredWidth: 180
+                                            text: modelData.sensorName
+                                            color: Theme.textSecondary
+                                            font.pixelSize: 13
+                                            elide: Text.ElideRight
+                                        }
+
+                                        Label {
+                                            Layout.preferredWidth: 100
+                                            text: modelData.tempText
+                                            font.pixelSize: 13
+                                            font.weight: Font.Bold
+                                            horizontalAlignment: Text.AlignRight
+                                        }
+
+                                        Item {
+                                            Layout.preferredWidth: 84
+                                            implicitHeight: 24
+
+                                            Rectangle {
+                                                readonly property color pillCol: modelData.status === "High"
+                                                    ? Theme.errorText
+                                                    : modelData.status === "Warm"
+                                                      ? Theme.warning
+                                                      : modelData.status === "Low"
+                                                        ? Theme.grid
+                                                        : Theme.success
+                                                anchors.centerIn: parent
+                                                implicitWidth: tempStLbl.implicitWidth + 14
+                                                implicitHeight: 22
+                                                radius: Theme.radiusPill
+                                                color: Qt.rgba(pillCol.r, pillCol.g, pillCol.b, 0.15)
+                                                border.color: Qt.rgba(pillCol.r, pillCol.g, pillCol.b, 0.4)
+                                                border.width: 1
+
+                                                Label {
+                                                    id: tempStLbl
+                                                    anchors.centerIn: parent
+                                                    text: I18n.t(modelData.status)
+                                                    color: parent.pillCol
+                                                    font.pixelSize: 11
+                                                    font.weight: Font.DemiBold
+                                                }
+                                            }
+                                        }
+
+                                        Label {
+                                            Layout.preferredWidth: 74
+                                            text: modelData.updatedText
+                                            color: Theme.textMuted
+                                            font.pixelSize: 12
+                                            horizontalAlignment: Text.AlignRight
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        visible: index < tempCard.rows.length - 1
+                                        Layout.fillWidth: true
+                                        height: 1
+                                        color: Theme.separator
+                                    }
+                                }
+                            }
                         }
-                        InfoRow {
-                            label: I18n.t("Plant ID")
-                            value: appController.selectedStationId > 0 ? String(appController.selectedStationId) : "—"
-                        }
-                        InfoRow {
-                            label: I18n.t("Address")
-                            value: appController.selectedStationLocation || I18n.t("Not specified")
-                        }
-                        InfoRow {
-                            label: I18n.t("Installed Capacity")
-                            value: appController.installedCapacityKw > 0
-                                   ? (appController.installedCapacityKw.toFixed(2) + " kWp")
-                                   : "—"
-                        }
-                        InfoRow {
-                            label: I18n.t("Connection Status")
-                            value: appController.connectionStatus
-                        }
-                        InfoRow {
-                            label: I18n.t("Last Update")
-                            value: appController.lastUpdateText
-                            showSeparator: false
-                        }
+                    }
+
+                    // Battery Temperatures Table Card (Temperature- Battery, then BMSTemp)
+                    TempTableCard {
+                        title: I18n.t("Battery Temperatures")
+                        emptyText: I18n.t("No battery temperature data available for this plant.")
+                        rows: appController.batteryTemperatures
+                    }
+
+                    // Other Sensors Table Card
+                    TempTableCard {
+                        title: I18n.t("Other sensors")
+                        emptyText: I18n.t("No other temperature sensors available for this plant.")
+                        rows: appController.otherTempSensors
                     }
                 }
             }

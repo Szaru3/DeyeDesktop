@@ -49,6 +49,8 @@ class AppController : public QObject {
     Q_PROPERTY(int deviceCount READ deviceCount NOTIFY devicesChanged)
     Q_PROPERTY(int alertCount READ alertCount NOTIFY alertsChanged)
     Q_PROPERTY(int activeAlertCount READ activeAlertCount NOTIFY alertsChanged)
+    Q_PROPERTY(QVariantList batteryTemperatures READ batteryTemperatures NOTIFY batteryTemperaturesChanged)
+    Q_PROPERTY(QVariantList otherTempSensors READ otherTempSensors NOTIFY batteryTemperaturesChanged)
 
     // Charts: Power Profile (Daily) & Generation & Usage History (M/Y/T)
     Q_PROPERTY(QString powerProfileDateText READ powerProfileDateText NOTIFY powerProfileChanged)
@@ -107,6 +109,8 @@ public:
     [[nodiscard]] int deviceCount() const { return m_deviceModel.rowCount(); }
     [[nodiscard]] int alertCount() const { return m_alertModel.rowCount(); }
     [[nodiscard]] int activeAlertCount() const { return m_alertModel.activeCount(); }
+    [[nodiscard]] QVariantList batteryTemperatures() const { return m_batteryTemperatures; }
+    [[nodiscard]] QVariantList otherTempSensors() const { return m_otherTempSensors; }
 
     [[nodiscard]] QString powerProfileDateText() const { return m_powerProfileDate.toString(QStringLiteral("yyyy/MM/dd")); }
     [[nodiscard]] QVariantList powerProfilePoints() const { return m_powerProfilePoints; }
@@ -165,6 +169,7 @@ signals:
     void selectedStationChanged();
     void devicesChanged();
     void alertsChanged();
+    void batteryTemperaturesChanged();
     void powerProfileChanged();
     void energyHistoryChanged();
     void telemetryChanged();
@@ -176,9 +181,11 @@ private:
     void updateTimerState();
     void applyDemoTelemetry(qint64 stationId);
     void applyDemoDevices(qint64 stationId);
+    void applyDemoBatteryTemps(qint64 stationId);
     void applyDemoAlerts(qint64 stationId);
     void applyDemoPowerProfile(qint64 stationId);
     void applyDemoEnergyHistory(qint64 stationId);
+    void rebuildBatteryTemperatureList();
     void fetchPowerProfile();
     void fetchEnergyHistory();
     void notifyNewFaults(const QVector<AlertInfo> &alerts);
@@ -188,6 +195,7 @@ private:
     void onStationsFetched(const QVector<StationInfo> &stations);
     void onStationLatestFetched(qint64 stationId, const StationLatestData &data);
     void onStationDevicesFetched(qint64 stationId, const QVector<DeviceInfo> &devices);
+    void onDeviceBatteryTempsFetched(qint64 stationId, const QVector<BatteryTempReading> &readings);
     void onStationAlertsFetched(qint64 stationId, const QVector<AlertInfo> &alerts);
     void onStationPowerProfileFetched(qint64 stationId, const QString &dateYmd, const QVector<PowerProfilePoint> &points);
     void onStationEnergyHistoryFetched(qint64 stationId, int granularity, const QVector<EnergyHistoryItem> &items);
@@ -204,6 +212,10 @@ private:
 
     QDate m_powerProfileDate = QDate::currentDate();
     QVariantList m_powerProfilePoints;
+    QMap<QString, QString> m_deviceDisplayNames;
+    QVector<BatteryTempReading> m_batteryTempReadings;
+    QVariantList m_batteryTemperatures;
+    QVariantList m_otherTempSensors;
     int m_energyHistoryMode = 0; // 0=M (granularity 2), 1=Y (granularity 3), 2=T (granularity 4)
     QDate m_energyHistoryDate = QDate::currentDate();
     QVariantList m_energyHistoryItems;

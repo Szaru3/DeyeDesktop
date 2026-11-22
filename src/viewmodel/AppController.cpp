@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QDateTime>
 #include <QVariantMap>
+#include <algorithm>
 #include <cmath>
 #include <numbers>
 
@@ -41,6 +42,7 @@ AppController::AppController(QObject *parent)
     connect(&m_apiClient, &DeyeApiClient::stationsFetched, this, &AppController::onStationsFetched);
     connect(&m_apiClient, &DeyeApiClient::stationLatestFetched, this, &AppController::onStationLatestFetched);
     connect(&m_apiClient, &DeyeApiClient::stationDevicesFetched, this, &AppController::onStationDevicesFetched);
+    connect(&m_apiClient, &DeyeApiClient::deviceBatteryTempsFetched, this, &AppController::onDeviceBatteryTempsFetched);
     connect(&m_apiClient, &DeyeApiClient::stationAlertsFetched, this, &AppController::onStationAlertsFetched);
     connect(&m_apiClient, &DeyeApiClient::stationPowerProfileFetched, this, &AppController::onStationPowerProfileFetched);
     connect(&m_apiClient, &DeyeApiClient::stationEnergyHistoryFetched, this, &AppController::onStationEnergyHistoryFetched);
@@ -208,10 +210,15 @@ void AppController::logout()
     m_deviceModel.clear();
     m_alertModel.clear();
     m_notifiedAlertIds.clear();
+    m_deviceDisplayNames.clear();
+    m_batteryTempReadings.clear();
+    m_batteryTemperatures.clear();
+    m_otherTempSensors.clear();
     m_powerProfilePoints.clear();
     m_energyHistoryItems.clear();
     emit devicesChanged();
     emit alertsChanged();
+    emit batteryTemperaturesChanged();
     emit powerProfileChanged();
     emit energyHistoryChanged();
 
@@ -251,6 +258,12 @@ void AppController::selectStationByIndex(int index)
         m_settingsStore.saveLastStationId(m_selectedStationId);
     }
 
+    m_deviceDisplayNames.clear();
+    m_batteryTempReadings.clear();
+    m_batteryTemperatures.clear();
+    m_otherTempSensors.clear();
+    emit batteryTemperaturesChanged();
+
     emit selectedStationChanged();
     refreshDashboard();
     updateTimerState();
@@ -265,6 +278,11 @@ void AppController::renameDevice(const QString &deviceSn, const QString &newName
 {
     m_settingsStore.saveCustomDeviceName(deviceSn, newName);
     m_deviceModel.setCustomNameForDevice(deviceSn, newName);
+    const QString trimmed = newName.trimmed();
+    if (!trimmed.isEmpty()) {
+        m_deviceDisplayNames.insert(deviceSn, trimmed);
+    }
+    rebuildBatteryTemperatureList();
 }
 
 QString AppController::energyHistoryPeriodText() const
@@ -387,6 +405,7 @@ void AppController::refreshDashboard()
     if (m_demoMode) {
         applyDemoTelemetry(m_selectedStationId);
         applyDemoDevices(m_selectedStationId);
+        applyDemoBatteryTemps(m_selectedStationId);
         applyDemoAlerts(m_selectedStationId);
         applyDemoPowerProfile(m_selectedStationId);
         applyDemoEnergyHistory(m_selectedStationId);
@@ -454,7 +473,113 @@ void AppController::applyDemoDevices(qint64 stationId)
     }
 
     m_deviceModel.setDevices(list);
+    m_deviceDisplayNames.clear();
+    const QMap<QString, QString> customNames = m_settingsStore.loadCustomDeviceNames();
+    for (const DeviceInfo &d : list) {
+        const QString custom = customNames.value(d.deviceSn).trimmed();
+        m_deviceDisplayNames.insert(d.deviceSn, !custom.isEmpty() ? custom : d.deviceName);
+    }
     emit devicesChanged();
+}
+
+void AppController::applyDemoBatteryTemps(qint64 stationId)
+{
+    const qint64 now = QDateTime::currentSecsSinceEpoch();
+    const double jitter = std::sin(static_cast<double>(m_demoTick) * 0.5) * 0.4;
+    QVector<BatteryTempReading> readings;
+
+    if (stationId == 100001) {
+        readings.push_back({QStringLiteral("2309184421"), QStringLiteral("Temperature- Battery"), 26.4 + jitter, QStringLiteral("°C"), now});
+        readings.push_back({QStringLiteral("2309184422"), QStringLiteral("Temperature- Battery"), 25.8 + jitter * 0.8, QStringLiteral("°C"), now});
+        readings.push_back({QStringLiteral("B240119008"), QStringLiteral("BMSTemp"), 27.2 + jitter, QStringLiteral("°C"), now});
+        readings.push_back({QStringLiteral("B240119008"), QStringLiteral("MOS Temperature"), 29.1 + jitter * 0.6, QStringLiteral("°C"), now});
+        readings.push_back({QStringLiteral("B240119008"), QStringLiteral("Cell Temp Min"), 24.7 + jitter * 0.5, QStringLiteral("°C"), now});
+    } else {
+        readings.push_back({QStringLiteral("2207119034"), QStringLiteral("Temperature- Battery"), 19.3 + jitter, QStringLiteral("°C"), now});
+    }
+
+    m_batteryTempReadings = readings;
+    rebuildBatteryTemperatureList();
+}
+
+void AppController::rebuildBatteryTemperatureList()
+{
+    auto sensorPriority = [](const QString &sensorName) -> int {
+        const QString lower = sensorName.trimmed().toLower();
+        if (lower.startsWith(QStringLiteral("temperature- battery"))
+            || lower.startsWith(QStringLiteral("temperature - battery"))) {
+            return 0;
+        }
+        if (lower.contains(QStringLiteral("bmstemp"))
+            || (lower.contains(QStringLiteral("bms")) && lower.contains(QStringLiteral("temp")))) {
+            return 1;
+        }
+        return 2;
+    };
+
+    QVector<BatteryTempReading> sorted = m_batteryTempReadings;
+    std::stable_sort(sorted.begin(), sorted.end(), [&](const BatteryTempReading &a, const BatteryTempReading &b) {
+        const int pa = sensorPriority(a.sensorName);
+        const int pb = sensorPriority(b.sensorName);
+        if (pa != pb) {
+            return pa < pb;
+        }
+        const int sensorCmp = a.sensorName.compare(b.sensorName, Qt::CaseInsensitive);
+        if (sensorCmp != 0) {
+            return sensorCmp < 0;
+        }
+        const QString nameA = m_deviceDisplayNames.value(a.deviceSn, a.deviceSn);
+        const QString nameB = m_deviceDisplayNames.value(b.deviceSn, b.deviceSn);
+        const int nameCmp = nameA.compare(nameB, Qt::CaseInsensitive);
+        if (nameCmp != 0) {
+            return nameCmp < 0;
+        }
+        return a.deviceSn.compare(b.deviceSn, Qt::CaseInsensitive) < 0;
+    });
+
+    QVariantList primaryList;
+    QVariantList otherList;
+    primaryList.reserve(sorted.size());
+    otherList.reserve(sorted.size());
+
+    for (const BatteryTempReading &r : sorted) {
+        const double tempC = (r.unit.contains(QLatin1Char('F'), Qt::CaseInsensitive))
+            ? ((r.temperature - 32.0) * 5.0 / 9.0)
+            : r.temperature;
+
+        QString status = QStringLiteral("Normal");
+        if (tempC >= 45.0) {
+            status = QStringLiteral("High");
+        } else if (tempC >= 38.0) {
+            status = QStringLiteral("Warm");
+        } else if (tempC <= 5.0) {
+            status = QStringLiteral("Low");
+        }
+
+        const QString devName = m_deviceDisplayNames.value(r.deviceSn, r.deviceSn);
+        const QString updatedText = r.collectionTime > 0
+            ? QDateTime::fromSecsSinceEpoch(r.collectionTime).toLocalTime().toString(QStringLiteral("HH:mm:ss"))
+            : QStringLiteral("—");
+
+        QVariantMap row;
+        row.insert(QStringLiteral("deviceName"), devName);
+        row.insert(QStringLiteral("deviceSn"), r.deviceSn);
+        row.insert(QStringLiteral("sensorName"), r.sensorName);
+        row.insert(QStringLiteral("temperature"), r.temperature);
+        row.insert(QStringLiteral("tempText"), QStringLiteral("%1 %2").arg(r.temperature, 0, 'f', 1).arg(r.unit));
+        row.insert(QStringLiteral("status"), status);
+        row.insert(QStringLiteral("updatedText"), updatedText);
+
+        if (sensorPriority(r.sensorName) < 2) {
+            primaryList.push_back(row);
+        } else {
+            otherList.push_back(row);
+        }
+    }
+
+    m_batteryTemperatures = primaryList;
+    m_otherTempSensors = otherList;
+    emit batteryTemperaturesChanged();
 }
 
 void AppController::onStationDevicesFetched(qint64 stationId, const QVector<DeviceInfo> &devices)
@@ -464,6 +589,48 @@ void AppController::onStationDevicesFetched(qint64 stationId, const QVector<Devi
     }
     m_deviceModel.setDevices(devices);
     emit devicesChanged();
+
+    m_deviceDisplayNames.clear();
+    const QMap<QString, QString> customNames = m_settingsStore.loadCustomDeviceNames();
+    QStringList tempCandidateSns;
+    for (const DeviceInfo &d : devices) {
+        const QString custom = customNames.value(d.deviceSn).trimmed();
+        m_deviceDisplayNames.insert(d.deviceSn, !custom.isEmpty() ? custom : d.deviceName);
+        if (!d.deviceSn.isEmpty()
+            && (d.deviceType == QStringLiteral("Inverter")
+                || d.deviceType == QStringLiteral("Microinverter")
+                || d.deviceType == QStringLiteral("Battery"))) {
+            tempCandidateSns.push_back(d.deviceSn);
+        }
+    }
+
+    m_batteryTempReadings.clear();
+    rebuildBatteryTemperatureList();
+    if (!tempCandidateSns.isEmpty()) {
+        m_apiClient.fetchDevicesLatestTemps(stationId, tempCandidateSns);
+    }
+}
+
+void AppController::onDeviceBatteryTempsFetched(qint64 stationId, const QVector<BatteryTempReading> &readings)
+{
+    if (stationId != m_selectedStationId) {
+        return;
+    }
+
+    for (const BatteryTempReading &incoming : readings) {
+        bool replaced = false;
+        for (BatteryTempReading &existing : m_batteryTempReadings) {
+            if (existing.deviceSn == incoming.deviceSn && existing.sensorName == incoming.sensorName) {
+                existing = incoming;
+                replaced = true;
+                break;
+            }
+        }
+        if (!replaced) {
+            m_batteryTempReadings.push_back(incoming);
+        }
+    }
+    rebuildBatteryTemperatureList();
 }
 
 void AppController::sendDesktopNotification(const QString &title, const QString &body, bool isCritical)

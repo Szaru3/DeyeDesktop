@@ -36,6 +36,21 @@ Rectangle {
     onWidthChanged: canvas.requestPaint()
     onHeightChanged: canvas.requestPaint()
 
+    function repaintAllCanvases() {
+        canvas.requestPaint();
+        solarIconCanvas.requestPaint();
+        gridIconCanvas.requestPaint();
+        invIconCanvas.requestPaint();
+        loadIconCanvas.requestPaint();
+    }
+
+    Connections {
+        target: Theme
+        function onIsDarkChanged() { root.repaintAllCanvases(); }
+        function onTextPrimaryChanged() { root.repaintAllCanvases(); }
+        function onBgPrimaryChanged() { root.repaintAllCanvases(); }
+    }
+
     // Card title ("Flow Graph")
     Label {
         anchors.top: parent.top
@@ -123,8 +138,19 @@ Rectangle {
 
                 if (!active) return;
 
+                // Extend the dot path under the source/destination icon tiles so dots
+                // smoothly emerge from and disappear behind the tiles instead of popping.
+                function extendEnd(pt, neighbor, dist) {
+                    var ex = pt.x - neighbor.x;
+                    var ey = pt.y - neighbor.y;
+                    var elen = Math.hypot(ex, ey) || 1;
+                    return { x: pt.x + (ex / elen) * dist, y: pt.y + (ey / elen) * dist };
+                }
+                var dotP0 = extendEnd(p0, p1, 20);
+                var dotP3 = extendEnd(p3, p2, 20);
+
                 // Animated glowing dots traveling along exact polyline
-                var ordered = reverse ? [p3, p2, p1, p0] : [p0, p1, p2, p3];
+                var ordered = reverse ? [dotP3, p2, p1, dotP0] : [dotP0, p1, p2, dotP3];
                 var segLens = [];
                 var totalLen = 0;
                 for (var i = 0; i < ordered.length - 1; ++i) {
@@ -247,6 +273,7 @@ Rectangle {
             border.width: 1.2
 
             Canvas {
+                id: solarIconCanvas
                 anchors.fill: parent
                 onPaint: {
                     var ctx = getContext("2d");
@@ -318,6 +345,7 @@ Rectangle {
             border.width: 1.2
 
             Canvas {
+                id: gridIconCanvas
                 anchors.fill: parent
                 onPaint: {
                     var ctx = getContext("2d");
@@ -388,6 +416,7 @@ Rectangle {
             border.width: 2
 
             Canvas {
+                id: invIconCanvas
                 anchors.fill: parent
                 onPaint: {
                     var ctx = getContext("2d");
@@ -516,6 +545,7 @@ Rectangle {
             border.width: 1.2
 
             Canvas {
+                id: loadIconCanvas
                 anchors.fill: parent
                 onPaint: {
                     var ctx = getContext("2d");

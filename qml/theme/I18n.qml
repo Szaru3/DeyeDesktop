@@ -114,6 +114,18 @@ QtObject {
         "Installed Capacity": "Moc zainstalowana",
         "Connection Status": "Status połączenia",
         "Last Update": "Ostatnia aktualizacja",
+        "Battery Temperatures": "Temperatury baterii",
+        "sensors": "czujników",
+        "Sensor": "Czujnik",
+        "Temperature": "Temperatura",
+        "Status": "Status",
+        "Normal": "Norma",
+        "Warm": "Ciepła",
+        "High": "Wysoka",
+        "Low": "Niska",
+        "No battery temperature data available for this plant.": "Brak danych o temperaturze baterii dla tej instalacji.",
+        "Other sensors": "Inne czujniki",
+        "No other temperature sensors available for this plant.": "Brak innych czujników temperatury dla tej instalacji.",
 
         // Inverter Settings Dialog
         "Reload": "Odśwież",

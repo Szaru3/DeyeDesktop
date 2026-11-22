@@ -46,6 +46,18 @@ Rectangle {
     onShowGridFeedInChanged: barCanvas.requestPaint()
     onHoverIndexChanged: barCanvas.requestPaint()
 
+    Connections {
+        target: Theme
+        function onIsDarkChanged() { barCanvas.requestPaint(); }
+        function onTextPrimaryChanged() { barCanvas.requestPaint(); }
+        function onBgPrimaryChanged() { barCanvas.requestPaint(); }
+    }
+
+    Connections {
+        target: I18n
+        function onLangChanged() { barCanvas.requestPaint(); }
+    }
+
     component LegendItem: Item {
         property string label: ""
         property color dotColor: Theme.accent

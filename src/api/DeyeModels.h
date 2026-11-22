@@ -97,6 +97,23 @@ struct DeviceListResult {
     static DeviceListResult fromJson(const QJsonObject &root);
 };
 
+struct BatteryTempReading {
+    QString deviceSn;
+    QString sensorName;
+    double temperature = 0.0;
+    QString unit = QStringLiteral("°C");
+    qint64 collectionTime = 0;
+};
+
+struct DeviceLatestTempsResult {
+    bool success = false;
+    QString code;
+    QString message;
+    QVector<BatteryTempReading> readings;
+
+    static DeviceLatestTempsResult fromJson(const QJsonObject &root);
+};
+
 struct InverterSystemConfig {
     bool success = false;
     QString code;

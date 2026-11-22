@@ -8,6 +8,16 @@
 #include <QQuickStyle>
 #include <QStyleHints>
 
+#include <functional>
+#include <memory>
+#include <optional>
+
+#if !defined(Q_OS_WIN) && !defined(Q_OS_MACOS) && defined(DEYE_HAS_DBUS)
+#include <QDBusConnection>
+#include <QDBusMessage>
+#include <QDBusVariant>
+#endif
+
 namespace {
 
 #if !defined(Q_OS_WIN) && !defined(Q_OS_MACOS)
@@ -74,9 +84,123 @@ QPalette buildAdwaitaPalette(bool dark)
     }
     return pal;
 }
+
+#if defined(DEYE_HAS_DBUS)
+std::optional<quint32> unwrapPortalUint(QVariant value)
+{
+    while (value.metaType() == QMetaType::fromType<QDBusVariant>()) {
+        value = value.value<QDBusVariant>().variant();
+    }
+    bool ok = false;
+    const quint32 result = value.toUInt(&ok);
+    return ok ? std::optional<quint32>(result) : std::nullopt;
+}
+
+std::optional<bool> queryPortalDarkMode()
+{
+    QDBusConnection bus = QDBusConnection::sessionBus();
+    if (!bus.isConnected()) {
+        return std::nullopt;
+    }
+
+    auto callMethod = [&](const QString &method) -> std::optional<quint32> {
+        QDBusMessage msg = QDBusMessage::createMethodCall(
+            QStringLiteral("org.freedesktop.portal.Desktop"),
+            QStringLiteral("/org/freedesktop/portal/desktop"),
+            QStringLiteral("org.freedesktop.portal.Settings"),
+            method);
+        msg << QStringLiteral("org.freedesktop.appearance")
+            << QStringLiteral("color-scheme");
+        const QDBusMessage reply = bus.call(msg, QDBus::Block, 500);
+        if (reply.type() != QDBusMessage::ReplyMessage || reply.arguments().isEmpty()) {
+            return std::nullopt;
+        }
+        return unwrapPortalUint(reply.arguments().constFirst());
+    };
+
+    // Portal Settings v2 uses ReadOne; fall back to v1 Read for older portals.
+    std::optional<quint32> scheme = callMethod(QStringLiteral("ReadOne"));
+    if (!scheme.has_value()) {
+        scheme = callMethod(QStringLiteral("Read"));
+    }
+    if (!scheme.has_value()) {
+        return std::nullopt;
+    }
+
+    // Freedesktop spec: 0 = no preference, 1 = prefer dark, 2 = prefer light.
+    if (*scheme == 1U) {
+        return true;
+    }
+    if (*scheme == 2U) {
+        return false;
+    }
+    return std::nullopt;
+}
+#endif
+
+bool detectInitialDarkMode()
+{
+#if defined(DEYE_HAS_DBUS)
+    if (const std::optional<bool> portalDark = queryPortalDarkMode(); portalDark.has_value()) {
+        return *portalDark;
+    }
+#endif
+    const Qt::ColorScheme scheme = QGuiApplication::styleHints()->colorScheme();
+    if (scheme == Qt::ColorScheme::Dark) {
+        return true;
+    }
+    if (scheme == Qt::ColorScheme::Light) {
+        return false;
+    }
+    return qEnvironmentVariable("GTK_THEME").contains(QStringLiteral("dark"), Qt::CaseInsensitive);
+}
 #endif
 
 } // namespace
+
+#if !defined(Q_OS_WIN) && !defined(Q_OS_MACOS) && defined(DEYE_HAS_DBUS)
+class PortalThemeWatcher : public QObject {
+    Q_OBJECT
+
+public:
+    explicit PortalThemeWatcher(std::function<void(std::optional<bool>)> callback,
+                                QObject *parent = nullptr)
+        : QObject(parent)
+        , m_callback(std::move(callback))
+    {
+        QDBusConnection::sessionBus().connect(
+            QStringLiteral("org.freedesktop.portal.Desktop"),
+            QStringLiteral("/org/freedesktop/portal/desktop"),
+            QStringLiteral("org.freedesktop.portal.Settings"),
+            QStringLiteral("SettingChanged"),
+            this,
+            SLOT(onSettingChanged(QString,QString,QDBusVariant)));
+    }
+
+private slots:
+    void onSettingChanged(const QString &ns, const QString &key, const QDBusVariant &value)
+    {
+        if (ns != QStringLiteral("org.freedesktop.appearance")
+            || key != QStringLiteral("color-scheme")) {
+            return;
+        }
+        const std::optional<quint32> scheme = unwrapPortalUint(value.variant());
+        if (!scheme.has_value()) {
+            return;
+        }
+        if (*scheme == 1U) {
+            m_callback(true);
+        } else if (*scheme == 2U) {
+            m_callback(false);
+        } else {
+            m_callback(std::nullopt);
+        }
+    }
+
+private:
+    std::function<void(std::optional<bool>)> m_callback;
+};
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -104,16 +228,39 @@ int main(int argc, char *argv[])
             QApplication::setStyle(QStringLiteral("Fusion"));
             QQuickStyle::setStyle(QStringLiteral("Fusion"));
 
-            auto applyPortalPalette = []() {
-                const auto scheme = QGuiApplication::styleHints()->colorScheme();
-                const bool useDark = (scheme == Qt::ColorScheme::Dark);
+            auto lastAppliedDark = std::make_shared<std::optional<bool>>();
+            auto applyAdwaitaPalette = [lastAppliedDark](bool useDark) {
+                if (lastAppliedDark->has_value() && **lastAppliedDark == useDark) {
+                    return;
+                }
+                *lastAppliedDark = useDark;
                 QApplication::setPalette(buildAdwaitaPalette(useDark));
             };
-            applyPortalPalette();
+
+            applyAdwaitaPalette(detectInitialDarkMode());
+
             QObject::connect(QGuiApplication::styleHints(),
                              &QStyleHints::colorSchemeChanged,
                              &app,
-                             [applyPortalPalette](Qt::ColorScheme) { applyPortalPalette(); });
+                             [applyAdwaitaPalette](Qt::ColorScheme scheme) {
+                                 if (scheme == Qt::ColorScheme::Dark) {
+                                     applyAdwaitaPalette(true);
+                                 } else if (scheme == Qt::ColorScheme::Light) {
+                                     applyAdwaitaPalette(false);
+                                 }
+                             });
+#if defined(DEYE_HAS_DBUS)
+            new PortalThemeWatcher(
+                [applyAdwaitaPalette](std::optional<bool> portalDark) {
+                    if (portalDark.has_value()) {
+                        applyAdwaitaPalette(*portalDark);
+                    } else {
+                        const auto scheme = QGuiApplication::styleHints()->colorScheme();
+                        applyAdwaitaPalette(scheme == Qt::ColorScheme::Dark);
+                    }
+                },
+                &app);
+#endif
         }
 #endif
         QQuickStyle::setFallbackStyle(QStringLiteral("Fusion"));
@@ -135,3 +282,7 @@ int main(int argc, char *argv[])
 
     return app.exec();
 }
+
+#if !defined(Q_OS_WIN) && !defined(Q_OS_MACOS) && defined(DEYE_HAS_DBUS)
+#include "main.moc"
+#endif

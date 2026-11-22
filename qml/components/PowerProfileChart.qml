@@ -42,6 +42,18 @@ Rectangle {
     onShowSocChanged: chartCanvas.requestPaint()
     onHoverIndexChanged: chartCanvas.requestPaint()
 
+    Connections {
+        target: Theme
+        function onIsDarkChanged() { chartCanvas.requestPaint(); }
+        function onTextPrimaryChanged() { chartCanvas.requestPaint(); }
+        function onBgPrimaryChanged() { chartCanvas.requestPaint(); }
+    }
+
+    Connections {
+        target: I18n
+        function onLangChanged() { chartCanvas.requestPaint(); }
+    }
+
     component LegendItem: Item {
         property string label: ""
         property color dotColor: Theme.accent

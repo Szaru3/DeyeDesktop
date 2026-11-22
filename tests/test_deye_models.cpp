@@ -414,6 +414,49 @@ private slots:
         QCOMPARE(hist.items[0].productionKwh, 28.4);
         QCOMPARE(hist.items[0].consumptionKwh, 31.5);
     }
+
+    void parseDeviceLatestBatteryTemps()
+    {
+        const QByteArray json = R"({
+            "code": "1000000",
+            "success": true,
+            "deviceDataList": [
+                {
+                    "deviceSn": "2309184421",
+                    "deviceType": "INVERTER",
+                    "collectionTime": 1737070476,
+                    "dataList": [
+                        {"key": "Temperature- Battery", "value": "26.4", "unit": "°C"},
+                        {"key": "Radiator Temperature", "value": "41.2", "unit": "°C"},
+                        {"key": "Temperature- Battery 2", "value": "-100", "unit": "°C"}
+                    ]
+                },
+                {
+                    "deviceSn": "B240119008",
+                    "deviceType": "BATTERY",
+                    "collectionTime": 1737070476000,
+                    "dataList": [
+                        {"key": "BMS Max Temperature", "value": 27.5, "unit": "°C"},
+                        {"key": "MOS Temperature", "value": 29.0, "unit": ""}
+                    ]
+                }
+            ]
+        })";
+
+        const auto res = DeviceLatestTempsResult::fromJson(QJsonDocument::fromJson(json).object());
+        QVERIFY(res.success);
+        QCOMPARE(res.readings.size(), 3);
+        QCOMPARE(res.readings[0].deviceSn, QStringLiteral("2309184421"));
+        QCOMPARE(res.readings[0].sensorName, QStringLiteral("Temperature- Battery"));
+        QCOMPARE(res.readings[0].temperature, 26.4);
+        QCOMPARE(res.readings[0].unit, QStringLiteral("°C"));
+        QCOMPARE(res.readings[1].deviceSn, QStringLiteral("B240119008"));
+        QCOMPARE(res.readings[1].sensorName, QStringLiteral("BMS Max Temperature"));
+        QCOMPARE(res.readings[1].temperature, 27.5);
+        QCOMPARE(res.readings[1].collectionTime, 1737070476LL);
+        QCOMPARE(res.readings[2].sensorName, QStringLiteral("MOS Temperature"));
+        QCOMPARE(res.readings[2].unit, QStringLiteral("°C"));
+    }
 };
 
 QTEST_GUILESS_MAIN(TestDeyeModels)

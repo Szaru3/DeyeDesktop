@@ -26,6 +26,7 @@ public:
     void fetchStations(int page = 1, int size = 50);
     void fetchStationLatest(qint64 stationId);
     void fetchStationDevices(qint64 stationId, int page = 1, int size = 50);
+    void fetchDevicesLatestTemps(qint64 stationId, const QStringList &deviceSns);
     void fetchStationAlerts(qint64 stationId, qint64 startTimeSec, qint64 endTimeSec, int page = 1, int size = 50);
     void fetchStationPowerProfile(qint64 stationId, const QString &dateYmd);
     void fetchStationEnergyHistory(qint64 stationId, const QString &startDateYmd, const QString &endDateYmd, int granularity);
@@ -43,6 +44,7 @@ signals:
     void stationsFetched(const QVector<deye::StationInfo> &stations);
     void stationLatestFetched(qint64 stationId, const deye::StationLatestData &data);
     void stationDevicesFetched(qint64 stationId, const QVector<deye::DeviceInfo> &devices);
+    void deviceBatteryTempsFetched(qint64 stationId, const QVector<deye::BatteryTempReading> &readings);
     void stationAlertsFetched(qint64 stationId, const QVector<deye::AlertInfo> &alerts);
     void stationPowerProfileFetched(qint64 stationId, const QString &dateYmd, const QVector<deye::PowerProfilePoint> &points);
     void stationEnergyHistoryFetched(qint64 stationId, int granularity, const QVector<deye::EnergyHistoryItem> &items);

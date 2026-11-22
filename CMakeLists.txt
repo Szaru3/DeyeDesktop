@@ -54,7 +54,7 @@ if(UNIX AND NOT APPLE)
     find_package(Qt6 6.5 QUIET COMPONENTS DBus)
     if(Qt6DBus_FOUND)
         target_link_libraries(deye_core PUBLIC Qt6::DBus)
-        target_compile_definitions(deye_core PRIVATE DEYE_HAS_DBUS=1)
+        target_compile_definitions(deye_core PUBLIC DEYE_HAS_DBUS=1)
     endif()
 endif()
 

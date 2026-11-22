@@ -264,6 +264,45 @@ void DeyeApiClient::fetchStationDevices(qint64 stationId, int page, int size)
     });
 }
 
+void DeyeApiClient::fetchDevicesLatestTemps(qint64 stationId, const QStringList &deviceSns)
+{
+    if (m_baseUrl.isEmpty() || m_accessToken.isEmpty() || deviceSns.isEmpty()) {
+        return;
+    }
+
+    // Deye Cloud /v1.0/device/latest accepts up to 10 devices per request.
+    constexpr int kBatchSize = 10;
+    const QUrl url(m_baseUrl + QStringLiteral("/v1.0/device/latest"));
+
+    for (int offset = 0; offset < deviceSns.size(); offset += kBatchSize) {
+        QJsonArray arr;
+        const int end = std::min(offset + kBatchSize, static_cast<int>(deviceSns.size()));
+        for (int i = offset; i < end; ++i) {
+            arr.append(deviceSns.at(i));
+        }
+        QJsonObject bodyObj;
+        bodyObj.insert(QStringLiteral("deviceList"), arr);
+
+        QNetworkReply *reply = m_network.post(buildRequest(url, true), QJsonDocument(bodyObj).toJson(QJsonDocument::Compact));
+        connect(reply, &QNetworkReply::finished, this, [this, reply, stationId]() {
+            reply->deleteLater();
+            const QByteArray raw = reply->readAll();
+            if (qEnvironmentVariableIntValue("DEYE_DEBUG_DEVICE_LATEST") == 1) {
+                qDebug().noquote() << "[device/latest]" << QString::fromUtf8(raw);
+            }
+            QJsonParseError parseErr{};
+            const QJsonDocument doc = QJsonDocument::fromJson(raw, &parseErr);
+            if (parseErr.error != QJsonParseError::NoError || !doc.isObject()) {
+                return;
+            }
+            const DeviceLatestTempsResult res = DeviceLatestTempsResult::fromJson(doc.object());
+            if (res.success) {
+                emit deviceBatteryTempsFetched(stationId, res.readings);
+            }
+        });
+    }
+}
+
 void DeyeApiClient::fetchStationAlerts(qint64 stationId, qint64 startTimeSec, qint64 endTimeSec, int page, int size)
 {
     if (m_baseUrl.isEmpty() || m_accessToken.isEmpty()) {

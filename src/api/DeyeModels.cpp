@@ -938,4 +938,84 @@ EnergyHistoryResult EnergyHistoryResult::fromJson(const QJsonObject &root, int g
     return res;
 }
 
+DeviceLatestTempsResult DeviceLatestTempsResult::fromJson(const QJsonObject &root)
+{
+    DeviceLatestTempsResult res;
+    res.success = isApiSuccess(root, &res.code, &res.message);
+
+    QJsonArray deviceArr;
+    if (root.value(QStringLiteral("deviceDataList")).isArray()) {
+        deviceArr = root.value(QStringLiteral("deviceDataList")).toArray();
+    } else if (root.value(QStringLiteral("data")).isObject()) {
+        const QJsonObject dataObj = root.value(QStringLiteral("data")).toObject();
+        if (dataObj.value(QStringLiteral("deviceDataList")).isArray()) {
+            deviceArr = dataObj.value(QStringLiteral("deviceDataList")).toArray();
+        } else if (dataObj.value(QStringLiteral("list")).isArray()) {
+            deviceArr = dataObj.value(QStringLiteral("list")).toArray();
+        }
+    } else if (root.value(QStringLiteral("list")).isArray()) {
+        deviceArr = root.value(QStringLiteral("list")).toArray();
+    }
+
+    for (const QJsonValue &devVal : deviceArr) {
+        if (!devVal.isObject()) {
+            continue;
+        }
+        const QJsonObject devObj = devVal.toObject();
+        const QString sn = devObj.value(QStringLiteral("deviceSn")).toString().trimmed();
+        const QString devType = normalizeDeviceType(devObj.value(QStringLiteral("deviceType")));
+        const bool isBatteryDevice = (devType.compare(QStringLiteral("Battery"), Qt::CaseInsensitive) == 0);
+        qint64 ts = readInt64(devObj, QStringLiteral("collectionTime"), 0);
+        if (ts > 100000000000LL) {
+            ts /= 1000;
+        }
+
+        const QJsonArray metrics = devObj.value(QStringLiteral("dataList")).toArray();
+        for (const QJsonValue &mVal : metrics) {
+            if (!mVal.isObject()) {
+                continue;
+            }
+            const QJsonObject mObj = mVal.toObject();
+            const QString key = mObj.value(QStringLiteral("key")).toString().trimmed();
+            if (key.isEmpty()) {
+                continue;
+            }
+
+            const QString lower = key.toLower();
+            const bool isTemp = lower.contains(QStringLiteral("temp"));
+            if (!isTemp) {
+                continue;
+            }
+            const bool isBatteryMetric = isBatteryDevice
+                || lower.contains(QStringLiteral("batt"))
+                || lower.contains(QStringLiteral("bms"))
+                || lower.contains(QStringLiteral("cell"))
+                || lower.contains(QStringLiteral("pack"));
+            if (!isBatteryMetric) {
+                continue;
+            }
+
+            double tempVal = 0.0;
+            if (!readOptionalDouble(mObj, QStringLiteral("value"), tempVal) || !std::isfinite(tempVal)) {
+                continue;
+            }
+            // Filter out common disconnected-probe sentinel values (e.g. -100 C or 6553.5)
+            if (tempVal <= -90.0 || tempVal >= 200.0) {
+                continue;
+            }
+
+            BatteryTempReading r;
+            r.deviceSn = sn;
+            r.sensorName = key;
+            r.temperature = tempVal;
+            const QString unit = mObj.value(QStringLiteral("unit")).toString().trimmed();
+            r.unit = unit.isEmpty() ? QStringLiteral("°C") : unit;
+            r.collectionTime = ts;
+            res.readings.push_back(r);
+        }
+    }
+
+    return res;
+}
+
 } // namespace deye
