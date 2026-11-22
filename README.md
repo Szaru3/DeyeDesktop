@@ -123,6 +123,66 @@ cmake --install build --prefix ~/.local
 
 ---
 
+### Linux Mint
+
+> **Note:** DeyeDesktop requires **Qt 6.5+**.
+> - **Linux Mint 23+ / LMDE 7+** include Qt 6.8+ in the default repositories (Option A).
+> - **Linux Mint 22.x** (Ubuntu 24.04 base) ships Qt 6.4.2 in `apt`, so install Qt 6.5+ via `aqtinstall` or the Qt Online Installer (Option B).
+
+#### Option A: Linux Mint 23+ / LMDE 7+ (system Qt 6)
+
+Install dependencies:
+```bash
+sudo apt update
+sudo apt install build-essential cmake ninja-build git \
+  qt6-base-dev qt6-declarative-dev \
+  qml6-module-qtquick qml6-module-qtquick-controls \
+  qml6-module-qtquick-layouts qml6-module-qtquick-templates
+```
+
+Build and install:
+```bash
+git clone https://github.com/Szaru3/DeyeDesktop.git DeyeDesktop
+cd DeyeDesktop
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+
+# System-wide install (binary + desktop entry + icon):
+sudo cmake --install build
+
+# Or user-local install (no sudo required):
+cmake --install build --prefix ~/.local
+```
+
+#### Option B: Linux Mint 22.x (with Qt 6.8 via `aqtinstall`)
+
+Install build tools and system libraries:
+```bash
+sudo apt update
+sudo apt install build-essential cmake ninja-build git pipx \
+  libgl1-mesa-dev libxkbcommon-dev
+pipx install aqtinstall
+~/.local/bin/aqt install-qt linux desktop 6.8.3 linux_gcc_64 -O "$HOME/Qt"
+```
+
+Build and install:
+```bash
+git clone https://github.com/Szaru3/DeyeDesktop.git DeyeDesktop
+cd DeyeDesktop
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_PREFIX_PATH="$HOME/Qt/6.8.3/gcc_64" \
+  -DCMAKE_INSTALL_RPATH="$HOME/Qt/6.8.3/gcc_64/lib"
+cmake --build build
+
+# System-wide install (binary + desktop entry + icon):
+sudo cmake --install build
+
+# Or user-local install (no sudo required):
+cmake --install build --prefix ~/.local
+```
+
+---
+
 ### Windows
 
 1. **Install Toolchain & Qt 6:**
