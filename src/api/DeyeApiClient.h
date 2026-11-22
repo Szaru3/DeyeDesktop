@@ -27,7 +27,7 @@ public:
     void fetchStationLatest(qint64 stationId);
     void fetchStationDevices(qint64 stationId, int page = 1, int size = 50);
     void fetchDevicesLatestTemps(qint64 stationId, const QStringList &deviceSns);
-    void fetchStationAlerts(qint64 stationId, qint64 startTimeSec, qint64 endTimeSec, int page = 1, int size = 50);
+    void fetchStationAlerts(qint64 stationId, qint64 startTimeSec, qint64 endTimeSec, int page = 1, int size = 20);
     void fetchStationPowerProfile(qint64 stationId, const QString &dateYmd);
     void fetchStationEnergyHistory(qint64 stationId, const QString &startDateYmd, const QString &endDateYmd, int granularity);
 

@@ -312,16 +312,20 @@ void DeyeApiClient::fetchStationAlerts(qint64 stationId, qint64 startTimeSec, qi
     const QUrl url(m_baseUrl + QStringLiteral("/v1.0/station/alertList"));
     QJsonObject bodyObj;
     bodyObj.insert(QStringLiteral("stationId"), stationId);
-    bodyObj.insert(QStringLiteral("startTime"), startTimeSec);
-    bodyObj.insert(QStringLiteral("endTime"), endTimeSec);
+    bodyObj.insert(QStringLiteral("startTimestamp"), startTimeSec);
+    bodyObj.insert(QStringLiteral("endTimestamp"), endTimeSec);
     bodyObj.insert(QStringLiteral("page"), page);
     bodyObj.insert(QStringLiteral("size"), size);
 
     QNetworkReply *reply = m_network.post(buildRequest(url, true), QJsonDocument(bodyObj).toJson(QJsonDocument::Compact));
     connect(reply, &QNetworkReply::finished, this, [this, reply, stationId]() {
         reply->deleteLater();
+        const QByteArray raw = reply->readAll();
+        if (qEnvironmentVariableIntValue("DEYE_DEBUG_ALERTS") == 1) {
+            qDebug().noquote() << "[station/alertList]" << QString::fromUtf8(raw);
+        }
         QJsonParseError parseErr{};
-        const QJsonDocument doc = QJsonDocument::fromJson(reply->readAll(), &parseErr);
+        const QJsonDocument doc = QJsonDocument::fromJson(raw, &parseErr);
         if (parseErr.error != QJsonParseError::NoError || !doc.isObject()) {
             return;
         }
