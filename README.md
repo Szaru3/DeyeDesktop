@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/screenshot.png" alt="DeyeDesktop dashboard screenshot" width="840" />
+  <img src="assets/screenshot-new.png" alt="DeyeDesktop dashboard screenshot" width="840" />
 </p>
 
 ## Features
