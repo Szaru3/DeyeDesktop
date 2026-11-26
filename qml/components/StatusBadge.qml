@@ -1,7 +1,7 @@
 import QtQuick
 import DeyeDesktop
 
-Rectangle {
+Item {
     id: root
 
     property string status: "UNKNOWN"
@@ -20,31 +20,28 @@ Rectangle {
                                       : isOffline ? I18n.t("Offline")
                                       : I18n.t("Unknown")
 
-    implicitWidth: row.implicitWidth + 16
+    implicitWidth: row.implicitWidth + 4
     implicitHeight: 24
-    radius: Theme.radiusPill
-    color: Qt.rgba(badgeColor.r, badgeColor.g, badgeColor.b, 0.15)
-    border.color: Qt.rgba(badgeColor.r, badgeColor.g, badgeColor.b, 0.30)
-    border.width: 1
 
     Row {
         id: row
-        anchors.centerIn: parent
-        spacing: 6
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.left: parent.left
+        spacing: 8
 
         Rectangle {
-            width: 7
-            height: 7
-            radius: 3.5
+            width: 8
+            height: 8
+            radius: 4
             color: root.badgeColor
             anchors.verticalCenter: parent.verticalCenter
         }
 
         Text {
             text: root.labelText
-            color: root.badgeColor
+            color: (root.isPartial || root.isOffline) ? root.badgeColor : Theme.textSecondary
             font.pixelSize: 12
-            font.weight: Font.DemiBold
+            font.weight: Font.Medium
             anchors.verticalCenter: parent.verticalCenter
         }
     }

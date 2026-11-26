@@ -22,12 +22,13 @@ Rectangle {
     property bool showCharge: true
     property bool showGridFeedIn: true
 
-    readonly property color colProduction: "#22C55E"
-    readonly property color colDischarge: "#38BDF8"
-    readonly property color colPurchased: "#8B5CF6"
-    readonly property color colConsumption: "#F59E0B"
-    readonly property color colCharge: "#2563EB"
-    readonly property color colGridFeedIn: "#F87171"
+    // Unified domain series colors matching Flow Graph & Power Profile
+    readonly property color colProduction: Theme.solar
+    readonly property color colDischarge: Theme.battery
+    readonly property color colPurchased: Theme.grid
+    readonly property color colConsumption: Theme.load
+    readonly property color colCharge: Theme.isDark ? "#2DD4BF" : "#0D9488"
+    readonly property color colGridFeedIn: Theme.isDark ? "#94A3B8" : "#64748B"
 
     property int hoverIndex: -1
 
@@ -35,7 +36,7 @@ Rectangle {
     color: Theme.bgSurface
     border.color: Theme.border
     border.width: 1
-    implicitHeight: 330
+    implicitHeight: 336
 
     onItemsChanged: { hoverIndex = -1; barCanvas.requestPaint(); }
     onShowProductionChanged: barCanvas.requestPaint()
@@ -218,7 +219,7 @@ Rectangle {
                     var halfH = plotH * 0.5;
 
                     // Horizontal grid lines + kWh axis labels
-                    ctx.font = "11px sans-serif";
+                    ctx.font = "11px monospace";
                     ctx.fillStyle = Theme.textMuted;
                     ctx.textAlign = "right";
                     ctx.textBaseline = "middle";

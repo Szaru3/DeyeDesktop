@@ -91,11 +91,11 @@ QtObject {
         // Devices & Rename
         "Loading devices…": "Ładowanie urządzeń…",
         "No Devices Found": "Nie znaleziono urządzeń",
-        "No inverters, data loggers, or batteries were returned for this plant.": "Brak falowników, rejestratorów lub baterii dla tej instalacji.",
+        "No inverters, data loggers, or batteries were returned for this plant": "Brak falowników, rejestratorów lub baterii dla tej instalacji",
         "Rename device": "Zmień nazwę urządzenia",
         "Rename Device": "Zmień nazwę urządzenia",
         "Default": "Domyślna",
-        "Saved locally on this computer (does not modify Deye Cloud).": "Zapisywane lokalnie na tym komputerze (nie zmienia nazwy w Deye Cloud).",
+        "Saved locally on this computer (does not modify Deye Cloud)": "Zapisywane lokalnie na tym komputerze (nie zmienia nazwy w Deye Cloud)",
         "Reset": "Resetuj",
         "Cancel": "Anuluj",
         "Save": "Zapisz",
@@ -103,7 +103,7 @@ QtObject {
 
         // Alerts
         "No Alerts": "Brak alertów",
-        "No active faults or recent warnings were reported for this plant in the last 7 days.": "Brak aktywnych awarii i ostrzeżeń dla tej instalacji w ciągu ostatnich 7 dni.",
+        "No active faults or recent warnings were reported for this plant in the last 7 days": "Brak aktywnych awarii i ostrzeżeń dla tej instalacji w ciągu ostatnich 7 dni",
         "Started": "Początek",
 
         // Plant Info
@@ -123,9 +123,9 @@ QtObject {
         "Warm": "Ciepła",
         "High": "Wysoka",
         "Low": "Niska",
-        "No battery temperature data available for this plant.": "Brak danych o temperaturze baterii dla tej instalacji.",
+        "No battery temperature data available for this plant": "Brak danych o temperaturze baterii dla tej instalacji",
         "Other sensors": "Inne czujniki",
-        "No other temperature sensors available for this plant.": "Brak innych czujników temperatury dla tej instalacji.",
+        "No other temperature sensors available for this plant": "Brak innych czujników temperatury dla tej instalacji",
 
         // Inverter Settings Dialog
         "Reload": "Odśwież",

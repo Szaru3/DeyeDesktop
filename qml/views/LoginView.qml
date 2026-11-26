@@ -34,7 +34,7 @@ Rectangle {
     component GroupTitle: Label {
         color: Theme.textSecondary
         font.pixelSize: 12
-        font.weight: Font.Bold
+        font.weight: Font.Medium
         leftPadding: 4
     }
 
@@ -73,6 +73,8 @@ Rectangle {
         anchors.fill: parent
         contentWidth: width
         contentHeight: Math.max(height, clampContainer.implicitHeight + 96)
+        boundsBehavior: Flickable.StopAtBounds
+        flickableDirection: Flickable.VerticalFlick
         clip: true
 
         ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
@@ -89,7 +91,7 @@ Rectangle {
             // App Header
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 6
+                spacing: 8
 
                 Image {
                     Layout.alignment: Qt.AlignHCenter
@@ -104,8 +106,8 @@ Rectangle {
                 Label {
                     Layout.alignment: Qt.AlignHCenter
                     text: "DeyeDesktop"
-                    font.pixelSize: 22
-                    font.weight: Font.Bold
+                    font.pixelSize: 24
+                    font.weight: Font.DemiBold
                 }
 
                 Label {
@@ -231,7 +233,7 @@ Rectangle {
 
                     Rectangle {
                         Layout.fillWidth: true
-                        implicitHeight: 52
+                        implicitHeight: 56
                         color: headerHover.containsMouse ? Theme.bgElevated : "transparent"
                         radius: Theme.radiusLg
 
@@ -239,7 +241,7 @@ Rectangle {
                             anchors.fill: parent
                             anchors.leftMargin: Theme.cardPadding
                             anchors.rightMargin: Theme.cardPadding
-                            spacing: 10
+                            spacing: 12
 
                             ColumnLayout {
                                 Layout.fillWidth: true
@@ -247,7 +249,7 @@ Rectangle {
 
                                 Label {
                                     text: I18n.t("Developer API Settings")
-                                    font.weight: Font.DemiBold
+                                    font.weight: Font.Medium
                                 }
 
                                 Label {
@@ -255,7 +257,7 @@ Rectangle {
                                           ? (regionCombo.displayText + " • " + I18n.t("Configured"))
                                           : I18n.t("Region, App ID & App Secret")
                                     color: Theme.textMuted
-                                    font.pixelSize: 11
+                                    font.pixelSize: 12
                                     elide: Text.ElideRight
                                     Layout.fillWidth: true
                                 }
@@ -264,7 +266,7 @@ Rectangle {
                             Label {
                                 text: root.devSectionExpanded ? "▾" : "▸"
                                 color: Theme.textSecondary
-                                font.pixelSize: 15
+                                font.pixelSize: 14
                             }
                         }
 
@@ -377,7 +379,7 @@ Rectangle {
                 Button {
                     id: signInButton
                     Layout.fillWidth: true
-                    implicitHeight: 38
+                    implicitHeight: 40
                     enabled: !appController.busy
                     text: appController.busy ? I18n.t("Signing in...") : I18n.t("Sign In")
                     onClicked: root.submitLogin()
@@ -385,26 +387,26 @@ Rectangle {
                     contentItem: Label {
                         text: signInButton.text
                         color: signInButton.enabled ? Theme.accentText : Theme.textMuted
-                        font.weight: Font.Bold
+                        font.weight: Font.DemiBold
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
 
                     background: Rectangle {
-                        radius: Theme.radiusSm
+                        radius: Theme.radiusMd
                         color: !signInButton.enabled
                                ? Theme.bgElevated
                                : signInButton.down
                                  ? Qt.darker(Theme.accent, 1.15)
                                  : signInButton.hovered
-                                   ? Qt.lighter(Theme.accent, 1.12)
+                                   ? Qt.lighter(Theme.accent, 1.10)
                                    : Theme.accent
                     }
                 }
 
                 Button {
                     Layout.fillWidth: true
-                    implicitHeight: 34
+                    implicitHeight: 36
                     flat: true
                     enabled: !appController.busy
                     text: I18n.t("Preview Demo Mode")

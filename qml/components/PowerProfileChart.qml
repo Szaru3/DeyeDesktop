@@ -19,12 +19,12 @@ Rectangle {
     property bool showConsumption: true
     property bool showSoc: true
 
-    // Series colors matching Deye Cloud Power Profile in dark mode
-    readonly property color colPv: "#E879F9"
-    readonly property color colGrid: "#8B5CF6"
-    readonly property color colBattery: "#3B82F6"
-    readonly property color colConsumption: "#F59E0B"
-    readonly property color colSoc: "#10B981"
+    // Unified domain series colors matching Flow Graph & KPI cards
+    readonly property color colPv: Theme.solar
+    readonly property color colGrid: Theme.grid
+    readonly property color colBattery: Theme.battery
+    readonly property color colConsumption: Theme.load
+    readonly property color colSoc: Theme.isDark ? "#94A3B8" : "#64748B"
 
     property int hoverIndex: -1
 
@@ -32,7 +32,7 @@ Rectangle {
     color: Theme.bgSurface
     border.color: Theme.border
     border.width: 1
-    implicitHeight: 330
+    implicitHeight: 336
 
     onPointsChanged: { hoverIndex = -1; chartCanvas.requestPaint(); }
     onShowPvChanged: chartCanvas.requestPaint()
@@ -191,7 +191,7 @@ Rectangle {
                     function yForSoc(soc) { return padT + plotH * (1.0 - soc / 100.0); }
 
                     // Horizontal grid lines & dual Y labels (kW left, % right)
-                    ctx.font = "11px sans-serif";
+                    ctx.font = "11px monospace";
                     ctx.fillStyle = Theme.textMuted;
                     ctx.textBaseline = "middle";
 

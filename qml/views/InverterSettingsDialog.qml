@@ -98,7 +98,7 @@ Dialog {
             // Dialog Header
             Rectangle {
                 Layout.fillWidth: true
-                implicitHeight: 58
+                implicitHeight: 56
                 color: Theme.bgHeader
 
                 Rectangle {
@@ -112,23 +112,24 @@ Dialog {
                 RowLayout {
                     anchors.fill: parent
                     anchors.leftMargin: 16
-                    anchors.rightMargin: 14
-                    spacing: 10
+                    anchors.rightMargin: 16
+                    spacing: 12
 
                     ColumnLayout {
                         Layout.fillWidth: true
-                        spacing: 1
+                        spacing: 2
                         Label {
                             text: (ctrl.deviceName || I18n.t("Inverter")) + " — " + I18n.t("Settings")
                             font.pixelSize: 15
-                            font.weight: Font.Bold
+                            font.weight: Font.DemiBold
                             elide: Text.ElideRight
                             Layout.fillWidth: true
                         }
                         Label {
                             text: "SN: " + ctrl.deviceSn + (ctrl.loading ? ("  •  " + I18n.t("Loading current config…")) : "")
-                            color: Theme.textSecondary
-                            font.pixelSize: 11
+                            color: Theme.textMuted
+                            font.family: Theme.monoFamily
+                            font.pixelSize: 12
                         }
                     }
 
@@ -201,6 +202,8 @@ Dialog {
                 Flickable {
                     contentWidth: width
                     contentHeight: sysCol.implicitHeight + 32
+                    boundsBehavior: Flickable.StopAtBounds
+                    flickableDirection: Flickable.VerticalFlick
                     clip: true
                     ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
@@ -364,6 +367,8 @@ Dialog {
                 Flickable {
                     contentWidth: width
                     contentHeight: battCol.implicitHeight + 32
+                    boundsBehavior: Flickable.StopAtBounds
+                    flickableDirection: Flickable.VerticalFlick
                     clip: true
                     ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
@@ -536,6 +541,8 @@ Dialog {
                 Flickable {
                     contentWidth: width
                     contentHeight: touCol.implicitHeight + 32
+                    boundsBehavior: Flickable.StopAtBounds
+                    flickableDirection: Flickable.VerticalFlick
                     clip: true
                     ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
@@ -718,6 +725,8 @@ Dialog {
                 Flickable {
                     contentWidth: width
                     contentHeight: advCol.implicitHeight + 32
+                    boundsBehavior: Flickable.StopAtBounds
+                    flickableDirection: Flickable.VerticalFlick
                     clip: true
                     ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 

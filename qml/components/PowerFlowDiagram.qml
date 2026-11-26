@@ -64,9 +64,9 @@ Rectangle {
     }
 
     // Geometry helpers shared between Canvas tracks and node tiles
-    readonly property real padX: Math.max(72, width * 0.12)
+    readonly property real padX: Math.max(76, width * 0.12)
     readonly property real topNodeY: 88
-    readonly property real bottomNodeY: height - 74
+    readonly property real bottomNodeY: height - 76
     readonly property real centerX: width / 2
     readonly property real centerY: (topNodeY + bottomNodeY) / 2
     readonly property real tileSize: 56
@@ -176,20 +176,20 @@ Rectangle {
                         acc += segLens[j];
                     }
 
-                    // Soft outer glow + accent ring + bright white core
+                    // Crisp instrument-grade pulse dot (subtle ring + solid core)
                     ctx.save();
                     ctx.beginPath();
-                    ctx.arc(px, py, 8.5, 0, Math.PI * 2);
-                    ctx.fillStyle = Qt.rgba(pulseColor.r, pulseColor.g, pulseColor.b, 0.26);
+                    ctx.arc(px, py, 6.0, 0, Math.PI * 2);
+                    ctx.fillStyle = Qt.rgba(pulseColor.r, pulseColor.g, pulseColor.b, 0.18);
                     ctx.fill();
 
                     ctx.beginPath();
-                    ctx.arc(px, py, 4.8, 0, Math.PI * 2);
+                    ctx.arc(px, py, 3.6, 0, Math.PI * 2);
                     ctx.fillStyle = pulseColor;
                     ctx.fill();
 
                     ctx.beginPath();
-                    ctx.arc(px, py, 2.1, 0, Math.PI * 2);
+                    ctx.arc(px, py, 1.4, 0, Math.PI * 2);
                     ctx.fillStyle = "#FFFFFF";
                     ctx.fill();
                     ctx.restore();
@@ -213,21 +213,21 @@ Rectangle {
                 {x: midRightX, y: cy - invOffsetY},
                 {x: cx + invHalf + 6, y: cy - invOffsetY}
             ];
-            drawOrthogonalFlow(gridPts, Math.abs(root.gridPowerW) > 10, root.gridPowerW < 0, Theme.accent, true);
+            drawOrthogonalFlow(gridPts, Math.abs(root.gridPowerW) > 10, root.gridPowerW < 0, Theme.grid, true);
 
             // Green "On grid" checkmark badge on the Grid vertical segment
             var badgeX = midRightX;
             var badgeY = (topY + (cy - invOffsetY)) / 2;
             ctx.save();
             ctx.beginPath();
-            ctx.arc(badgeX, badgeY, 9.5, 0, Math.PI * 2);
+            ctx.arc(badgeX, badgeY, 9.0, 0, Math.PI * 2);
             ctx.fillStyle = Theme.success;
             ctx.fill();
             ctx.beginPath();
-            ctx.moveTo(badgeX - 4, badgeY + 0.2);
-            ctx.lineTo(badgeX - 1.2, badgeY + 3.2);
-            ctx.lineTo(badgeX + 4.5, badgeY - 3.0);
-            ctx.lineWidth = 2;
+            ctx.moveTo(badgeX - 3.6, badgeY + 0.2);
+            ctx.lineTo(badgeX - 1.0, badgeY + 2.8);
+            ctx.lineTo(badgeX + 4.0, badgeY - 2.6);
+            ctx.lineWidth = 1.8;
             ctx.lineCap = "round";
             ctx.lineJoin = "round";
             ctx.strokeStyle = "#FFFFFF";
@@ -242,7 +242,7 @@ Rectangle {
                 {x: midLeftX, y: cy + invOffsetY},
                 {x: cx - invHalf - 6, y: cy + invOffsetY}
             ];
-            drawOrthogonalFlow(battPts, Math.abs(root.batteryPowerW) > 10, root.batteryPowerW > 0, Theme.accent, true);
+            drawOrthogonalFlow(battPts, Math.abs(root.batteryPowerW) > 10, root.batteryPowerW > 0, Theme.battery, true);
 
             // 4) Inverter (Right-Lower) -> Home Load (Bottom-Right)
             var loadPts = [
@@ -251,7 +251,7 @@ Rectangle {
                 {x: midRightX, y: botY},
                 {x: rightX - halfTile - 4, y: botY}
             ];
-            drawOrthogonalFlow(loadPts, root.consumptionPowerW > 10, false, Theme.accent, true);
+            drawOrthogonalFlow(loadPts, root.consumptionPowerW > 10, false, Theme.load, true);
         }
     }
 
@@ -267,10 +267,10 @@ Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             width: root.tileSize
             height: root.tileSize
-            radius: 14
+            radius: Theme.radiusLg
             color: Theme.bgElevated
-            border.color: root.generationPowerW > 10 ? Qt.rgba(Theme.solar.r, Theme.solar.g, Theme.solar.b, 0.7) : Theme.border
-            border.width: 1.2
+            border.color: Theme.border
+            border.width: 1
 
             Canvas {
                 id: solarIconCanvas
@@ -318,11 +318,11 @@ Rectangle {
 
         Label {
             anchors.top: solarTile.bottom
-            anchors.topMargin: 6
+            anchors.topMargin: 8
             anchors.horizontalCenter: parent.horizontalCenter
             text: appController.formatPower(root.generationPowerW)
             font.pixelSize: 13
-            font.weight: Font.Bold
+            font.weight: Font.DemiBold
             color: Theme.textPrimary
         }
     }
@@ -331,7 +331,7 @@ Rectangle {
     Item {
         x: (root.width - root.padX) - width / 2
         y: root.topNodeY - root.tileSize / 2
-        width: 110
+        width: 112
         height: 108
 
         Rectangle {
@@ -339,10 +339,10 @@ Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             width: root.tileSize
             height: root.tileSize
-            radius: 14
+            radius: Theme.radiusLg
             color: Theme.bgElevated
-            border.color: Math.abs(root.gridPowerW) > 10 ? Qt.rgba(Theme.grid.r, Theme.grid.g, Theme.grid.b, 0.7) : Theme.border
-            border.width: 1.2
+            border.color: Theme.border
+            border.width: 1
 
             Canvas {
                 id: gridIconCanvas
@@ -379,21 +379,21 @@ Rectangle {
         Label {
             id: gridValLbl
             anchors.top: gridTile.bottom
-            anchors.topMargin: 6
+            anchors.topMargin: 8
             anchors.horizontalCenter: parent.horizontalCenter
             text: appController.formatPower(root.gridPowerW)
             font.pixelSize: 13
-            font.weight: Font.Bold
+            font.weight: Font.DemiBold
             color: Theme.textPrimary
         }
 
         Label {
             anchors.top: gridValLbl.bottom
-            anchors.topMargin: 1
+            anchors.topMargin: 2
             anchors.horizontalCenter: parent.horizontalCenter
             text: root.gridPowerW < -10 ? I18n.t("Exporting") : I18n.t("On grid")
-            font.pixelSize: 11
-            font.weight: Font.Medium
+            font.pixelSize: 12
+            font.weight: Font.Normal
             color: Theme.success
         }
     }
@@ -401,19 +401,19 @@ Rectangle {
     // ===================== NODE 3: INVERTER (CENTER) =====================
     Item {
         x: root.centerX - width / 2
-        y: root.centerY - 30
+        y: root.centerY - root.tileSize / 2
         width: 96
-        height: 86
+        height: 84
 
         Rectangle {
             id: invTile
             anchors.horizontalCenter: parent.horizontalCenter
-            width: 58
-            height: 58
-            radius: 14
+            width: root.tileSize
+            height: root.tileSize
+            radius: Theme.radiusLg
             color: Theme.bgElevated
-            border.color: Theme.accent
-            border.width: 2
+            border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.75)
+            border.width: 1.5
 
             Canvas {
                 id: invIconCanvas
@@ -443,11 +443,11 @@ Rectangle {
 
         Label {
             anchors.top: invTile.bottom
-            anchors.topMargin: 6
+            anchors.topMargin: 8
             anchors.horizontalCenter: parent.horizontalCenter
             text: I18n.t("Inverter")
             font.pixelSize: 12
-            font.weight: Font.Medium
+            font.weight: Font.Normal
             color: Theme.textSecondary
         }
     }
@@ -456,7 +456,7 @@ Rectangle {
     Item {
         x: root.padX - width / 2
         y: root.bottomNodeY - root.tileSize / 2
-        width: 110
+        width: 112
         height: 92
 
         Rectangle {
@@ -464,10 +464,10 @@ Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             width: root.tileSize
             height: root.tileSize
-            radius: 14
+            radius: Theme.radiusLg
             color: Theme.bgElevated
-            border.color: Math.abs(root.batteryPowerW) > 10 ? Qt.rgba(Theme.battery.r, Theme.battery.g, Theme.battery.b, 0.7) : Theme.border
-            border.width: 1.2
+            border.color: Theme.border
+            border.width: 1
 
             Column {
                 anchors.centerIn: parent
@@ -477,8 +477,8 @@ Rectangle {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: root.hasBatterySoc ? (Math.round(root.batterySoc) + "%") : "—"
                     font.pixelSize: 12
-                    font.weight: Font.Bold
-                    color: Theme.accent
+                    font.weight: Font.DemiBold
+                    color: Theme.battery
                 }
 
                 // Battery icon with live SOC fill
@@ -492,7 +492,7 @@ Rectangle {
                         radius: 2.5
                         color: "transparent"
                         border.color: Theme.textPrimary
-                        border.width: 1.8
+                        border.width: 1.6
 
                         Rectangle {
                             anchors.left: parent.left
@@ -501,7 +501,7 @@ Rectangle {
                             anchors.margins: 3
                             width: Math.max(0, (parent.width - 6) * Math.max(0, Math.min(1, root.batterySoc / 100.0)))
                             radius: 1
-                            color: root.batterySoc <= 15 ? Theme.errorText : Theme.accent
+                            color: root.batterySoc <= 15 ? Theme.errorText : Theme.battery
                         }
                     }
 
@@ -518,11 +518,11 @@ Rectangle {
 
         Label {
             anchors.top: battTile.bottom
-            anchors.topMargin: 6
+            anchors.topMargin: 8
             anchors.horizontalCenter: parent.horizontalCenter
             text: appController.formatPower(root.batteryPowerW)
             font.pixelSize: 13
-            font.weight: Font.Bold
+            font.weight: Font.DemiBold
             color: Theme.textPrimary
         }
     }
@@ -531,7 +531,7 @@ Rectangle {
     Item {
         x: (root.width - root.padX) - width / 2
         y: root.bottomNodeY - root.tileSize / 2
-        width: 110
+        width: 112
         height: 92
 
         Rectangle {
@@ -539,10 +539,10 @@ Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             width: root.tileSize
             height: root.tileSize
-            radius: 14
+            radius: Theme.radiusLg
             color: Theme.bgElevated
-            border.color: root.consumptionPowerW > 10 ? Qt.rgba(Theme.load.r, Theme.load.g, Theme.load.b, 0.7) : Theme.border
-            border.width: 1.2
+            border.color: Theme.border
+            border.width: 1
 
             Canvas {
                 id: loadIconCanvas
@@ -578,11 +578,11 @@ Rectangle {
 
         Label {
             anchors.top: loadTile.bottom
-            anchors.topMargin: 6
+            anchors.topMargin: 8
             anchors.horizontalCenter: parent.horizontalCenter
             text: appController.formatPower(root.consumptionPowerW)
             font.pixelSize: 13
-            font.weight: Font.Bold
+            font.weight: Font.DemiBold
             color: Theme.textPrimary
         }
     }

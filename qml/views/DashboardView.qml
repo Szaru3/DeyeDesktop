@@ -15,10 +15,10 @@ Rectangle {
         anchors.fill: parent
         spacing: 0
 
-        // Native-styled Header Bar (equal 16px horizontal padding)
+        // Native-styled Header Bar (56px, quiet chrome)
         Rectangle {
             Layout.fillWidth: true
-            implicitHeight: 54
+            implicitHeight: 56
             color: Theme.bgHeader
 
             Rectangle {
@@ -94,27 +94,19 @@ Rectangle {
                 Label {
                     Layout.preferredWidth: 112
                     text: I18n.t(root.sectionKeys[root.currentSection])
-                    font.pixelSize: 14
-                    font.weight: Font.Bold
+                    font.pixelSize: 15
+                    font.weight: Font.DemiBold
                     elide: Text.ElideRight
                 }
 
-                // Demo Pill
-                Rectangle {
+                // Quiet Demo Indicator
+                Label {
                     visible: appController.demoMode
-                    implicitWidth: demoLbl.implicitWidth + 12
-                    implicitHeight: 20
-                    radius: Theme.radiusPill
-                    color: Theme.solarSoft
-                    border.color: Qt.rgba(Theme.solar.r, Theme.solar.g, Theme.solar.b, 0.5)
-                    Label {
-                        id: demoLbl
-                        anchors.centerIn: parent
-                        text: "DEMO"
-                        color: Theme.solar
-                        font.pixelSize: 10
-                        font.weight: Font.Bold
-                    }
+                    text: "Demo"
+                    color: Theme.textMuted
+                    font.family: Theme.monoFamily
+                    font.pixelSize: 12
+                    font.weight: Font.Medium
                 }
 
                 // Native Plant / Station Selector
@@ -195,7 +187,7 @@ Rectangle {
 
                 Item { Layout.fillWidth: true }
 
-                // Red Sign Out Button
+                // Quiet Sign Out Button (subtle danger tint only on hover/press)
                 Button {
                     id: signOutButton
                     implicitHeight: 32
@@ -206,8 +198,9 @@ Rectangle {
 
                     contentItem: Label {
                         text: signOutButton.text
-                        color: "#FFFFFF"
-                        font.weight: Font.DemiBold
+                        color: (signOutButton.hovered || signOutButton.down) ? Theme.errorText : Theme.textSecondary
+                        font.pixelSize: 13
+                        font.weight: Font.Medium
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -215,32 +208,54 @@ Rectangle {
                     background: Rectangle {
                         radius: Theme.radiusSm
                         color: signOutButton.down
-                               ? Qt.darker(Theme.error, 1.15)
+                               ? Theme.errorSoft
                                : signOutButton.hovered
-                                 ? Qt.lighter(Theme.error, 1.12)
-                                 : Theme.error
+                                 ? Theme.errorSoft
+                                 : Theme.bgElevated
+                        border.color: (signOutButton.hovered || signOutButton.down)
+                                      ? Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.35)
+                                      : Theme.border
+                        border.width: 1
                     }
                 }
             }
         }
 
-        // Scrollable Clamped Body (equal 20px margins & 16px spacing)
-        Flickable {
+        // Native-scrolling Clamped Body (symmetric margins between left edge and scrollbar)
+        ScrollView {
+            id: bodyScroll
             Layout.fillWidth: true
             Layout.fillHeight: true
-            contentWidth: width
-            contentHeight: bodyColumn.implicitHeight + Theme.pageMargin * 2
             clip: true
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+            ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
-            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+            readonly property real scrollBarReserve: ScrollBar.vertical && ScrollBar.vertical.visible
+                ? Math.max(0, ScrollBar.vertical.width - rightPadding)
+                : 0
+            readonly property real viewportWidth: Math.max(0, availableWidth - scrollBarReserve)
 
-            ColumnLayout {
-                id: bodyColumn
-                width: Math.min(980, parent.width - Theme.pageMargin * 2)
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.top
-                anchors.topMargin: Theme.pageMargin
-                spacing: Theme.spacingLg
+            contentWidth: availableWidth
+            contentHeight: bodyColumn.implicitHeight + Theme.pageMargin * 2
+
+            Component.onCompleted: {
+                if (contentItem) {
+                    contentItem.boundsBehavior = Flickable.StopAtBounds
+                    contentItem.flickableDirection = Flickable.VerticalFlick
+                }
+            }
+
+            Item {
+                width: bodyScroll.viewportWidth
+                implicitHeight: bodyColumn.implicitHeight + Theme.pageMargin * 2
+
+                ColumnLayout {
+                    id: bodyColumn
+                    width: Math.min(1120, Math.max(0, parent.width - Theme.pageMargin * 2))
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.top: parent.top
+                    anchors.topMargin: Theme.pageMargin
+                    spacing: Theme.spacingLg
 
                 // Error Banner
                 Rectangle {
@@ -276,11 +291,11 @@ Rectangle {
                     spacing: Theme.spacingMd
 
                     ColumnLayout {
-                        spacing: 3
+                        spacing: 4
                         Label {
                             text: appController.selectedStationName || I18n.t("No Plant Selected")
-                            font.pixelSize: 20
-                            font.weight: Font.Bold
+                            font.pixelSize: 22
+                            font.weight: Font.DemiBold
                         }
                         Label {
                             text: {
@@ -301,6 +316,7 @@ Rectangle {
                     Label {
                         text: I18n.t("Updated") + " " + appController.lastUpdateText
                         color: Theme.textMuted
+                        font.family: Theme.monoFamily
                         font.pixelSize: 12
                     }
                 }
@@ -418,12 +434,12 @@ Rectangle {
                         Label {
                             Layout.alignment: Qt.AlignHCenter
                             text: appController.busy ? I18n.t("Loading devices…") : I18n.t("No Devices Found")
-                            font.pixelSize: 16
-                            font.weight: Font.Bold
+                            font.pixelSize: 15
+                            font.weight: Font.DemiBold
                         }
                         Label {
                             Layout.alignment: Qt.AlignHCenter
-                            text: I18n.t("No inverters, data loggers, or batteries were returned for this plant.")
+                            text: I18n.t("No inverters, data loggers, or batteries were returned for this plant")
                             color: Theme.textSecondary
                         }
                     }
@@ -513,6 +529,7 @@ Rectangle {
                                                 return parts.join("  •  ");
                                             }
                                             color: Theme.textSecondary
+                                            font.family: Theme.monoFamily
                                             font.pixelSize: 12
                                             elide: Text.ElideRight
                                         }
@@ -522,7 +539,8 @@ Rectangle {
                                         visible: model.lastSeenText !== "—"
                                         text: model.lastSeenText
                                         color: Theme.textMuted
-                                        font.pixelSize: 11
+                                        font.family: Theme.monoFamily
+                                        font.pixelSize: 12
                                     }
 
                                     StatusBadge {
@@ -574,12 +592,12 @@ Rectangle {
                         Label {
                             Layout.alignment: Qt.AlignHCenter
                             text: I18n.t("No Alerts")
-                            font.pixelSize: 16
-                            font.weight: Font.Bold
+                            font.pixelSize: 15
+                            font.weight: Font.DemiBold
                         }
                         Label {
                             Layout.alignment: Qt.AlignHCenter
-                            text: I18n.t("No active faults or recent warnings were reported for this plant in the last 7 days.")
+                            text: I18n.t("No active faults or recent warnings were reported for this plant in the last 7 days")
                             color: Theme.textSecondary
                         }
                     }
@@ -904,14 +922,14 @@ Rectangle {
                                         Layout.fillWidth: true
                                         Layout.leftMargin: Theme.rowPadding
                                         Layout.rightMargin: Theme.rowPadding
-                                        Layout.topMargin: 10
-                                        Layout.bottomMargin: 10
+                                        Layout.topMargin: 12
+                                        Layout.bottomMargin: 12
                                         spacing: Theme.spacingMd
 
                                         ColumnLayout {
                                             Layout.fillWidth: true
                                             Layout.preferredWidth: 200
-                                            spacing: 1
+                                            spacing: 2
 
                                             Label {
                                                 Layout.fillWidth: true
@@ -925,7 +943,8 @@ Rectangle {
                                                 visible: modelData.deviceSn.length > 0 && modelData.deviceSn !== modelData.deviceName
                                                 text: "SN: " + modelData.deviceSn
                                                 color: Theme.textMuted
-                                                font.pixelSize: 11
+                                                font.family: Theme.monoFamily
+                                                font.pixelSize: 12
                                                 elide: Text.ElideRight
                                             }
                                         }
@@ -942,8 +961,9 @@ Rectangle {
                                         Label {
                                             Layout.preferredWidth: 100
                                             text: modelData.tempText
+                                            font.family: Theme.monoFamily
                                             font.pixelSize: 13
-                                            font.weight: Font.Bold
+                                            font.weight: Font.DemiBold
                                             horizontalAlignment: Text.AlignRight
                                         }
 
@@ -951,8 +971,8 @@ Rectangle {
                                             Layout.preferredWidth: 84
                                             implicitHeight: 24
 
-                                            Rectangle {
-                                                readonly property color pillCol: modelData.status === "High"
+                                            Row {
+                                                readonly property color dotCol: modelData.status === "High"
                                                     ? Theme.errorText
                                                     : modelData.status === "Warm"
                                                       ? Theme.warning
@@ -960,20 +980,22 @@ Rectangle {
                                                         ? Theme.grid
                                                         : Theme.success
                                                 anchors.centerIn: parent
-                                                implicitWidth: tempStLbl.implicitWidth + 14
-                                                implicitHeight: 22
-                                                radius: Theme.radiusPill
-                                                color: Qt.rgba(pillCol.r, pillCol.g, pillCol.b, 0.15)
-                                                border.color: Qt.rgba(pillCol.r, pillCol.g, pillCol.b, 0.4)
-                                                border.width: 1
+                                                spacing: 6
+
+                                                Rectangle {
+                                                    width: 6
+                                                    height: 6
+                                                    radius: 3
+                                                    color: parent.dotCol
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                }
 
                                                 Label {
-                                                    id: tempStLbl
-                                                    anchors.centerIn: parent
                                                     text: I18n.t(modelData.status)
-                                                    color: parent.pillCol
-                                                    font.pixelSize: 11
-                                                    font.weight: Font.DemiBold
+                                                    color: modelData.status === "Normal" ? Theme.textSecondary : parent.dotCol
+                                                    font.pixelSize: 12
+                                                    font.weight: Font.Medium
+                                                    anchors.verticalCenter: parent.verticalCenter
                                                 }
                                             }
                                         }
@@ -982,6 +1004,7 @@ Rectangle {
                                             Layout.preferredWidth: 74
                                             text: modelData.updatedText
                                             color: Theme.textMuted
+                                            font.family: Theme.monoFamily
                                             font.pixelSize: 12
                                             horizontalAlignment: Text.AlignRight
                                         }
@@ -1001,17 +1024,18 @@ Rectangle {
                     // Battery Temperatures Table Card (Temperature- Battery, then BMSTemp)
                     TempTableCard {
                         title: I18n.t("Battery Temperatures")
-                        emptyText: I18n.t("No battery temperature data available for this plant.")
+                        emptyText: I18n.t("No battery temperature data available for this plant")
                         rows: appController.batteryTemperatures
                     }
 
                     // Other Sensors Table Card
                     TempTableCard {
                         title: I18n.t("Other sensors")
-                        emptyText: I18n.t("No other temperature sensors available for this plant.")
+                        emptyText: I18n.t("No other temperature sensors available for this plant")
                         rows: appController.otherTempSensors
                     }
                 }
+            }
             }
         }
     }
@@ -1055,9 +1079,9 @@ Rectangle {
 
             Label {
                 Layout.fillWidth: true
-                text: I18n.t("Saved locally on this computer (does not modify Deye Cloud).")
+                text: I18n.t("Saved locally on this computer (does not modify Deye Cloud)")
                 color: Theme.textMuted
-                font.pixelSize: 11
+                font.pixelSize: 12
                 wrapMode: Text.WordWrap
             }
 
