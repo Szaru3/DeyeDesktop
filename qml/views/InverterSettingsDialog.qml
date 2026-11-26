@@ -607,8 +607,8 @@ Dialog {
                                     spacing: 8
                                     Label { text: "Slot"; Layout.preferredWidth: 36; color: Theme.textMuted; font.pixelSize: 11; font.weight: Font.Bold }
                                     Label { text: "Start Time"; Layout.preferredWidth: 78; color: Theme.textMuted; font.pixelSize: 11; font.weight: Font.Bold }
-                                    Label { text: "SOC (%)"; Layout.preferredWidth: 88; color: Theme.textMuted; font.pixelSize: 11; font.weight: Font.Bold }
-                                    Label { text: "Power (W)"; Layout.preferredWidth: 108; color: Theme.textMuted; font.pixelSize: 11; font.weight: Font.Bold }
+                                    Label { text: "SOC (%)"; Layout.preferredWidth: 116; color: Theme.textMuted; font.pixelSize: 11; font.weight: Font.Bold }
+                                    Label { text: "Power (W)"; Layout.preferredWidth: 116; color: Theme.textMuted; font.pixelSize: 11; font.weight: Font.Bold }
                                     Label { text: "Grid"; Layout.preferredWidth: 52; color: Theme.textMuted; font.pixelSize: 11; font.weight: Font.Bold }
                                     Label { text: "Gen"; Layout.fillWidth: true; color: Theme.textMuted; font.pixelSize: 11; font.weight: Font.Bold }
                                 }
@@ -647,14 +647,14 @@ Dialog {
                                             }
                                             SpinBox {
                                                 id: slotSoc
-                                                Layout.preferredWidth: 88
+                                                Layout.preferredWidth: 116
                                                 from: 0; to: 100; editable: true
                                                 value: modelData.soc
                                                 onValueModified: ctrl.updateTouSlot(index, slotTime.text, slotSoc.value, slotPower.value, modelData.voltage, slotGrid.checked, slotGen.checked)
                                             }
                                             SpinBox {
                                                 id: slotPower
-                                                Layout.preferredWidth: 108
+                                                Layout.preferredWidth: 116
                                                 from: 0; to: 30000; stepSize: 100; editable: true
                                                 value: modelData.power
                                                 onValueModified: ctrl.updateTouSlot(index, slotTime.text, slotSoc.value, slotPower.value, modelData.voltage, slotGrid.checked, slotGen.checked)
